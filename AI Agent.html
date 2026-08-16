@@ -152,7 +152,7 @@
             .signature-area { page-break-inside: avoid; margin-top: 15px !important; }
             .sig-row { margin-bottom: 15px !important; }
         }
-
+    
         /* 🌟 新增：遮罩层背景样式 🌟 */
         .zoom-overlay {
           display: none;
@@ -208,6 +208,7 @@
           z-index: 100000;
           backdrop-filter: blur(8px);
         }
+
     </style>
 </head>
 <body>
@@ -219,6 +220,7 @@
     <img id="modalZoomImg" src="" alt="Enlarged Preview" />
   </div>
 </div>
+
 
 <datalist id="title_main_list">
     <option value="CCSA"></option>
@@ -823,10 +825,7 @@ function forceSaveData() {
         let pasteData = (e.clipboardData || window.clipboardData).getData('text');
         if(!pasteData) return;
 
-        let rows = pasteData.split(/
-|
-|
-/);
+        let rows = pasteData.split(/\r\n|\n|\r/);
         let startTd = target.closest('td');
         let startTr = target.closest('tr');
         let tbody = startTr.closest('tbody');
@@ -842,7 +841,7 @@ function forceSaveData() {
                 currentTr = tbody.lastElementChild;
             }
 
-            let cells = rows[i].split('	');
+            let cells = rows[i].split('\t');
             for (let j = 0; j < cells.length; j++) {
                 let targetColIndex = startColIndex + j;
                 if (targetColIndex < currentTr.children.length) {
@@ -870,10 +869,7 @@ function forceSaveData() {
                     let pasteData = (e.clipboardData || window.clipboardData).getData('text');
                     if(!pasteData) return;
 
-                    let rows = pasteData.split(/
-|
-|
-/);
+                    let rows = pasteData.split(/\r\n|\n|\r/);
                     let currentTr = target.closest('tr');
 
                     let fieldsMap = {
@@ -1944,7 +1940,7 @@ function forceSaveData() {
             let imgBase64 = canvas.toDataURL('image/png');
             
             // 组装成一个可以自适应手机屏幕的 img 标签
-            let htmlContent = `<img src="${imgBase64}" style="width: 100%; height: auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px;" onclick="openZoomModal(this.src)" style="cursor: pointer;">`;
+            let htmlContent = `<img src="${imgBase64}" style="width: 100%; height: auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer;" onclick="openZoomModal(this.src)">`;
 
             // 6. 发送含有图片的 HTML 给后端
             fetch('/api/submit_approval', {
@@ -2143,7 +2139,7 @@ function forceSaveData() {
 
             let aiText = result.result;
             // 完美修复截断问题
-            aiText = aiText.replace(/\`\`\`json/gi, '').replace(/\`\`\`/gi, '').trim();
+            aiText = aiText.replace(/```json/gi, '').replace(/```/gi, '').trim();
 
             try {
                 let parsedData = JSON.parse(aiText);
@@ -2322,5 +2318,6 @@ function forceSaveData() {
       lastTap = currentTime;
     });
 </script>
+
 </body>
 </html>
