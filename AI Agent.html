@@ -410,7 +410,7 @@
                         <option value="USD">USD</option>
                         <option value="AED">AED</option>
                     </select>)<br>Price</th>
-                    <th width="10%">备注<br>Remark</th>
+                    <th width="10%">用途<br>Purpose</th>
                     <th width="5%" class="no-print">操作</th>
                 </tr>
             </thead>
@@ -425,7 +425,7 @@
             </tfoot>
         </table>
         <div class="add-row-container no-print">
-            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'], true)">+ 新增一行</button>
+            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'], true)">+ 新增一行</button>
         </div>
         <div class="signature-area" id="sig_purchase">
             <div class="sig-row">
@@ -884,7 +884,7 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
 
                     let fieldsMap = {
                         'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-                        'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
+                        'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
                         'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
                         'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
                     };
@@ -1018,7 +1018,7 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
         const targetCount = rowCounters.index;
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1316,7 +1316,7 @@ function autoFill(rowId, prefix, fields) {
         const prefixes = ['reim', 'purc', 'rect', 'issu'];
         const fieldMaps = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1544,7 +1544,7 @@ function autoFill(rowId, prefix, fields) {
         const saved = localStorage.getItem('ccecc_jv_data_pro');
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1946,8 +1946,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
         let purchaseDiv = document.getElementById('purchase');
         let cloneNode = purchaseDiv.cloneNode(true);
         
-        cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
-        
+        // 🚨 核心修复：先稳稳当当地把所有字填准，保证格子数量绝对一致！
         let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
         let clonedInputs = cloneNode.querySelectorAll('input, textarea, select');
 
@@ -1970,6 +1969,9 @@ function initDefaultDemo(todayStr, thisYearSN) {
             span.style.padding = '2px';
             el.parentNode.replaceChild(span, el);
         });
+
+        // 🚨 核心修复：等所有字填完，再去删掉不要的列，彻底杜绝错位！
+        cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
 
         cloneNode.style.position = 'absolute';
         cloneNode.style.top = '-9999px';
@@ -2002,7 +2004,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 launchBtn.innerText = originalText;
                 launchBtn.disabled = false;
                 if(res.status === 'success') {
-                    // 🌟 修复点 1：使用 prompt 直接提供生成的审批链接供复制
+                    // 🌟 核心修复：生成正确的审批页面链接，并自动复制
                     let approvalLink = window.location.origin + '/approve_page';
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(approvalLink).then(() => {
