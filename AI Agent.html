@@ -163,7 +163,7 @@
           height: 100vh;
           background: rgba(0, 0, 0, 0.92);
           z-index: 99999;
-          touch-action: none; /* 阻止浏览器默认滚动，由手势接管 */
+          touch-action: none;
           overflow: hidden;
           justify-content: center;
           align-items: center;
@@ -1184,7 +1184,6 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
             aiWrapper.style.display = 'none';
         }
 
-        // 仅在【采购申请单】页面显示发起审批和刷新签字按钮
         const approvalBtns = document.querySelectorAll('.lan-approval-btn');
         if (tabId === 'purchase') {
             approvalBtns.forEach(btn => btn.style.display = 'inline-block');
@@ -1231,13 +1230,11 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
                 let priceStr = priceEl ? priceEl.value.trim() : '';
                 let qtyStr = qtyEl ? qtyEl.value.trim() : '';
                 
-                // 1. 优先逻辑：只要【税前】或【税费】填了任意一个，系统就接管自动加和 (空值按0算)
                 if (preTaxStr !== '' || taxStr !== '') {
                     let p = parseFloat(preTaxStr) || 0;
                     let t = parseFloat(taxStr) || 0;
                     expectedAmount = p + t;
                 } 
-                // 2. 备用逻辑：采购单模式 (没填税，只填了单价和数量)
                 else if (priceStr !== '' && qtyStr !== '') {
                     let p = parseFloat(priceStr) || 0;
                     let q = parseFloat(qtyStr) || 0;
@@ -1253,18 +1250,16 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
                                            document.activeElement === qtyEl || 
                                            document.activeElement === currencyEl);
                     
-                    // 状态A：正在输入前置条件，或者含税金额被清空了，自动填入！
                     if (isActiveTrigger || currentVal === '') {
                         amountEl.value = expectedAmount.toFixed(3);
                         amountEl.style.color = '';
                         amountEl.style.fontWeight = '';
                         amountEl.title = '';
                     } else {
-                        // 状态B：用户手动改了含税金额。进行严谨比对！
                         let currentAmount = parseFloat(currentVal);
                         if (currentVal !== '' && !isNaN(currentAmount) && Math.abs(currentAmount - expectedAmount) > 0.001) {
-                            amountEl.style.color = '#dc3545'; // 变红
-                            amountEl.style.fontWeight = 'bold'; // 加粗
+                            amountEl.style.color = '#dc3545'; 
+                            amountEl.style.fontWeight = 'bold'; 
                             amountEl.title = '🚨 警告：您手填的金额与系统(税前+税费)自动计算的结果不符！';
                         } else {
                             amountEl.style.color = '';
@@ -1901,8 +1896,7 @@ function autoFill(rowId, prefix, fields) {
 
         saveDataToLocal();
     }
-
-    function initDefaultDemo(todayStr, thisYearSN) {
+function initDefaultDemo(todayStr, thisYearSN) {
         if(document.getElementById('reim_head_date')) document.getElementById('reim_head_date').value = todayStr;
         if(document.getElementById('purc_head_date')) document.getElementById('purc_head_date').value = todayStr;
         if(document.getElementById('rect_head_date')) document.getElementById('rect_head_date').value = todayStr;
@@ -1950,15 +1944,11 @@ function autoFill(rowId, prefix, fields) {
         launchBtn.innerText = '📸 生成快照中...';
         launchBtn.disabled = true;
 
-        // 1. 克隆采购单的表格内容
         let purchaseDiv = document.getElementById('purchase');
         let cloneNode = purchaseDiv.cloneNode(true);
         
-        // 2. 清理不需要领导看到的多余元素（🚨 这里修复了备注列丢失的问题）
         cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
-        // 🚨 删除之前那行无脑去 last-child 的错误代码，保留原本所有的 7 列！
         
-        // 3. 将输入框里的值固化为纯文本
         let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
         let clonedInputs = cloneNode.querySelectorAll('input, textarea, select');
 
@@ -1982,7 +1972,6 @@ function autoFill(rowId, prefix, fields) {
             el.parentNode.replaceChild(span, el);
         });
 
-        // 4. 准备截图环境：强制宽度以确保 PC 排版比例，临时放入 DOM 以便渲染
         cloneNode.style.position = 'absolute';
         cloneNode.style.top = '-9999px';
         cloneNode.style.left = '0';
@@ -1992,15 +1981,12 @@ function autoFill(rowId, prefix, fields) {
         cloneNode.style.boxSizing = 'border-box';
         document.body.appendChild(cloneNode);
 
-        // 5. 调用 html2canvas 生成高清图片
         html2canvas(cloneNode, { scale: 2, useCORS: true }).then(canvas => {
-            document.body.removeChild(cloneNode); // 渲染完毕后移除克隆节点
+            document.body.removeChild(cloneNode); 
             let imgBase64 = canvas.toDataURL('image/png');
             
-            // 组装成一个可以自适应手机屏幕的 img 标签
             let htmlContent = `<img src="${imgBase64}" style="width: 100%; height: auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer;" onclick="if(typeof openZoomModal === 'function') openZoomModal(this.getAttribute('src'))">`;
 
-            // 6. 发送含有图片的 HTML 给后端
             fetch('/api/submit_approval', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -2017,7 +2003,9 @@ function autoFill(rowId, prefix, fields) {
                 launchBtn.innerText = originalText;
                 launchBtn.disabled = false;
                 if(res.status === 'success') {
-                    alert('✅ 采购单快照已成功推送到手机审批端！\n\n请通知领导访问链接查看详情并签字。');
+                    // 🌟 修复点 1：使用 prompt 直接提供生成的审批链接供复制
+                    let approvalLink = res.approval_url || (window.location.origin + '/approval'); 
+                    prompt('✅ 采购单快照已成功推送到手机审批端！\n\n请复制下方专属审批链接，发给领导审批：', approvalLink);
                 } else {
                     alert('❌ 推送失败：' + (res.error || '未知错误'));
                 }
@@ -2055,15 +2043,20 @@ function autoFill(rowId, prefix, fields) {
                 const sigNodes = activeTab.querySelectorAll('.sig-item');
                 
                 sigNodes.forEach(node => {
+                    // 🌟 修复点 2：设置相对定位，让图片“悬浮盖章”，防止撑坏打印排版
+                    node.style.position = 'relative'; 
+
                     if (node.innerText.includes('副经理')) {
                         if (sigs['deputy']) {
-                            node.innerHTML = `项目副经理：<br><span class="en">(Deputy Project Manager)</span><br><img src="${sigs['deputy']}" style="height:45px; margin-top:5px; mix-blend-mode: multiply;">`;
+                            node.innerHTML = `项目副经理：<br><span class="en">(Deputy Project Manager)</span>
+                            <img src="${sigs['deputy']}" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); height: 75px; mix-blend-mode: multiply; z-index: 1; pointer-events: none;">`;
                             foundAny = true;
                         }
                     }
                     if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
                          if (sigs['manager']) {
-                             node.innerHTML = `项目经理：<br><span class="en">(Project Manager)</span><br><img src="${sigs['manager']}" style="height:45px; margin-top:5px; mix-blend-mode: multiply;">`;
+                             node.innerHTML = `项目经理：<br><span class="en">(Project Manager)</span>
+                             <img src="${sigs['manager']}" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); height: 75px; mix-blend-mode: multiply; z-index: 1; pointer-events: none;">`;
                              foundAny = true;
                          }
                     }
@@ -2252,7 +2245,7 @@ function autoFill(rowId, prefix, fields) {
     // 🌟 新增：图片缩放手势交互核心代码 (带防双击误判) 🌟
     let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
     let initialDistance = null, isDragging = false;
-    let isPinching = false; // 新增标记：记录当前是否处于捏合状态
+    let isPinching = false; 
 
     const overlay = document.getElementById('imgZoomOverlay');
     const zoomImg = document.getElementById('modalZoomImg');
@@ -2261,7 +2254,7 @@ function autoFill(rowId, prefix, fields) {
     function openZoomModal(src) {
       zoomImg.src = src;
       overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden'; // 禁止底页滚动
+      document.body.style.overflow = 'hidden'; 
       resetTransform();
     }
 
@@ -2286,7 +2279,6 @@ function autoFill(rowId, prefix, fields) {
       zoomImg.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
     }
 
-    // 计算双指间距
     function getDistance(touches) {
       return Math.hypot(
         touches[0].clientX - touches[1].clientX,
@@ -2294,7 +2286,6 @@ function autoFill(rowId, prefix, fields) {
       );
     }
 
-    // 触摸事件监听
     wrapper.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
         isDragging = true;
@@ -2302,7 +2293,7 @@ function autoFill(rowId, prefix, fields) {
         startY = e.touches[0].clientY - posY;
       } else if (e.touches.length === 2) {
         isDragging = false;
-        isPinching = true; // 记录：进入了双指放大模式
+        isPinching = true; 
         initialDistance = getDistance(e.touches);
         lastScale = scale;
       }
@@ -2317,7 +2308,7 @@ function autoFill(rowId, prefix, fields) {
       } else if (e.touches.length === 2 && initialDistance) {
         const currentDist = getDistance(e.touches);
         const newScale = lastScale * (currentDist / initialDistance);
-        scale = Math.min(Math.max(newScale, 1), 4); // 限制缩放 1x 到 4x
+        scale = Math.min(Math.max(newScale, 1), 4); 
         updateTransform();
       }
     }, { passive: false });
@@ -2332,10 +2323,9 @@ function autoFill(rowId, prefix, fields) {
             resetTransform();
         }
 
-        // 🌟 核心拦截逻辑：如果是刚刚完成捏合松手，直接强行打断，绝不触发下方的双击还原！
         if (isPinching) {
             isPinching = false;
-            lastTap = 0; // 清空双击计时器
+            lastTap = 0; 
             return; 
         }
 
