@@ -267,28 +267,110 @@
                 btnSave.disabled = false;
             });
         }
-    </script>
-
-    <!-- 🌟 缩放手势交互核心代码 🌟 -->
     <script>
-        let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
-        let initialDistance = null, isDragging = false;
-        const overlay = document.getElementById('imgZoomOverlay');
-        const zoomImg = document.getElementById('modalZoomImg');
-        const wrapper = document.getElementById('zoomWrapper');
+    // 🌟 新增：图片缩放手势交互核心代码 (带防双击误判) 🌟
+    let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
+    let initialDistance = null, isDragging = false;
+    let isPinching = false; // 新增标记：记录当前是否处于捏合状态
+
+    const overlay = document.getElementById('imgZoomOverlay');
+    const zoomImg = document.getElementById('modalZoomImg');
+    const wrapper = document.getElementById('zoomWrapper');
+
+    function openZoomModal(src) {
+      zoomImg.src = src;
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden'; // 禁止底页滚动
+      resetTransform();
+    }
+
+    function closeZoomModal(e) {
+      if (e.target === overlay || e.target.classList.contains('zoom-close-btn')) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        resetTransform();
+      }
+    }
+
+    function resetTransform() {
+      scale = 1;
+      lastScale = 1;
+      posX = 0;
+      posY = 0;
+      isPinching = false;
+      updateTransform();
+    }
+
+    function updateTransform() {
+      zoomImg.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+    }
+
+    // 计算双指间距
+    function getDistance(touches) {
+      return Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY
+      );
+    }
+
+    // 触摸事件监听
+    wrapper.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        startX = e.touches[0].clientX - posX;
+        startY = e.touches[0].clientY - posY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        isPinching = true; // 记录：进入了双指放大模式
+        initialDistance = getDistance(e.touches);
+        lastScale = scale;
+      }
+    }, { passive: false });
+
+    wrapper.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length === 1 && isDragging && scale > 1) {
+        posX = e.touches[0].clientX - startX;
+        posY = e.touches[0].clientY - startY;
+        updateTransform();
+      } else if (e.touches.length === 2 && initialDistance) {
+        const currentDist = getDistance(e.touches);
+        const newScale = lastScale * (currentDist / initialDistance);
+        scale = Math.min(Math.max(newScale, 1), 4); // 限制缩放 1x 到 4x
+        updateTransform();
+      }
+    }, { passive: false });
+
+    let lastTap = 0;
+    wrapper.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        isDragging = false;
+        initialDistance = null;
         
-        function openZoomModal(src) { zoomImg.src = src; overlay.style.display = 'flex'; document.body.style.overflow = 'hidden'; resetTransform(); }
-        function closeZoomModal(e) { if (e.target === overlay || e.target.classList.contains('zoom-close-btn')) { overlay.style.display = 'none'; document.body.style.overflow = ''; resetTransform(); } }
-        function resetTransform() { scale = 1; lastScale = 1; posX = 0; posY = 0; updateTransform(); }
-        function updateTransform() { zoomImg.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
-        function getDistance(touches) { return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY); }
-        
-        wrapper.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - posX; startY = e.touches[0].clientY - posY; } else if (e.touches.length === 2) { isDragging = false; initialDistance = getDistance(e.touches); lastScale = scale; } }, { passive: false });
-        wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); if (e.touches.length === 1 && isDragging && scale > 1) { posX = e.touches[0].clientX - startX; posY = e.touches[0].clientY - startY; updateTransform(); } else if (e.touches.length === 2 && initialDistance) { const currentDist = getDistance(e.touches); scale = Math.min(Math.max(lastScale * (currentDist / initialDistance), 1), 4); updateTransform(); } }, { passive: false });
-        wrapper.addEventListener('touchend', (e) => { if (e.touches.length === 0) { isDragging = false; initialDistance = null; if (scale <= 1) resetTransform(); } });
-        
-        let lastTap = 0;
-        wrapper.addEventListener('touchend', (e) => { const currentTime = new Date().getTime(); const tapLength = currentTime - lastTap; if (tapLength < 300 && tapLength > 0) { if (scale > 1) { resetTransform(); } else { scale = 2.5; updateTransform(); } } lastTap = currentTime; });
-    </script>
+        if (scale <= 1) {
+            resetTransform();
+        }
+
+        // 🌟 核心拦截逻辑：如果是刚刚完成捏合松手，直接强行打断，绝不触发下方的双击还原！
+        if (isPinching) {
+            isPinching = false;
+            lastTap = 0; // 清空双击计时器
+            return; 
+        }
+
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          if (scale > 1) {
+            resetTransform();
+          } else {
+            scale = 2.5;
+            updateTransform();
+          }
+        }
+        lastTap = currentTime;
+      }
+    });
+</script>
 </body>
 </html>

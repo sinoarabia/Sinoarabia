@@ -221,7 +221,6 @@
   </div>
 </div>
 
-
 <datalist id="title_main_list">
     <option value="CCSA"></option>
     <option value="CCECC"></option>
@@ -438,8 +437,7 @@
         </div>
         <div class="boss-mark no-print">老板专属表格iiavatar</div>
     </div>
-
-    <!-- ================= 3. 入库单 ================= -->
+<!-- ================= 3. 入库单 ================= -->
     <div id="receipt" class="tab-content">
         <div class="doc-title">
             <input type="text" class="title-input" id="title_rect" value="CCSA JV" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
@@ -629,7 +627,7 @@
             <p style="margin-top:0; font-size:14px; font-weight:bold; color:#6f42c1;">方案一：原图一键直传 (需配好底部 API 密钥)</p>
             <input type="file" id="modalFile" style="display:none" accept=".jpg, .jpeg, .png, .pdf, application/pdf, image/*" onchange="executeImageAI(event)">
             <button id="modalUploadBtn" onclick="document.getElementById('modalFile').click()" style="padding:8px 20px; background:#6f42c1; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:14px; transition:0.2s; box-shadow:0 2px 4px rgba(111,66,193,0.2);">
-                📁 点击上传发票原图或 PDF
+                📁 点击上传发票原图 أو PDF
             </button>
             <p id="modalUploadStatus" style="font-size:12px; color:#666; margin-bottom:0; margin-top:8px;">图片将安全发送至您的本地 Python 引擎处理。</p>
         </div>
@@ -653,7 +651,7 @@
 </div>
 <!-- 基础表格逻辑 -->
 <script>
-    const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'unit', 'priceJD', 'qty', 'preTaxUSD', 'taxUSD', 'amountUSD', 'purpose', 'costCenter', 'remark'];
+const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'unit', 'priceJD', 'qty', 'preTaxUSD', 'taxUSD', 'amountUSD', 'purpose', 'costCenter', 'remark'];
     const aiReimFields = ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'];
     let rowCounters = { index: 0, reim: 0, ai_reim: 0, purc: 0, rect: 0, issu: 0 };
     let isInitializing = true; 
@@ -682,7 +680,7 @@
         reader.readAsText(file);
         event.target.value = ''; 
     }
-function forceSaveData() {
+    function forceSaveData() {
         saveDataToLocal(); 
         
         const dataStr = localStorage.getItem('ccecc_jv_data_pro');
@@ -1283,7 +1281,7 @@ function forceSaveData() {
         }
         refreshAllForms();
     }
-    function autoFill(rowId, prefix, fields) {
+function autoFill(rowId, prefix, fields) {
         const snValue = document.getElementById(prefix + '_sn_' + rowId).value;
         const record = getIndexDataBySN(snValue);
         const rate = parseFloat(document.getElementById('global_rate').value) || 0.708;
@@ -2251,42 +2249,10 @@ function forceSaveData() {
 </script>
 <!-- 生成专属链接弹窗工具 -->
 <script>
-    document.addEventListener('click', function(e) {
-        // 自动捕捉你点击“生成审批快照”的动作
-        if(e.target.innerText && (e.target.innerText.includes('快照') || e.target.innerText.includes('发起审批'))) {
-            
-            setTimeout(() => {
-                // 自动生成带唯一防伪码的专属链接
-                const uniqueSession = Math.random().toString(36).substr(2, 8);
-                const link = `https://www.sinoarabia.com/approve_page?session=${uniqueSession}`;
-                
-                // 弹出一个高大上的复制框
-                const modal = document.createElement('div');
-                modal.innerHTML = `
-                    <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; display:flex; justify-content:center; align-items:center;">
-                        <div style="background:white; padding:30px; border-radius:12px; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 400px; width: 90%;">
-                            <h3 style="color:#056c5a; margin-top:0;">✅ 审批已发起</h3>
-                            <p style="color:#666; font-size:14px;">这是本次的专属审批链接。当PD签完字后，该链接会自动作废锁死：</p>
-                            <input type="text" id="copyLinkInput" value="${link}" style="width:100%; padding:10px; border:2px dashed #b8975a; border-radius:6px; margin-bottom:15px; font-size:15px; text-align:center; box-sizing:border-box; color:#004080; font-weight:bold;" readonly>
-                            <button onclick="document.getElementById('copyLinkInput').select(); document.execCommand('copy'); this.innerText='✅ 已复制 Copied!'; this.style.background='#28a745';" style="background:#056c5a; color:white; border:none; padding:12px 20px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%; font-size:16px; transition:0.3s;">🔗 复制发送给领导</button>
-                            <button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:#999; margin-top:15px; cursor:pointer; text-decoration:underline;">关闭</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-            }, 800); // 延迟0.8秒等待后台存储完成
-        }
-    });
-
-    // 🌟 新增：图片缩放手势交互核心代码 🌟
-    let scale = 1;
-    let lastScale = 1;
-    let posX = 0;
-    let posY = 0;
-    let startX = 0;
-    let startY = 0;
-    let initialDistance = null;
-    let isDragging = false;
+    // 🌟 新增：图片缩放手势交互核心代码 (带防双击误判) 🌟
+    let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
+    let initialDistance = null, isDragging = false;
+    let isPinching = false; // 新增标记：记录当前是否处于捏合状态
 
     const overlay = document.getElementById('imgZoomOverlay');
     const zoomImg = document.getElementById('modalZoomImg');
@@ -2312,6 +2278,7 @@ function forceSaveData() {
       lastScale = 1;
       posX = 0;
       posY = 0;
+      isPinching = false;
       updateTransform();
     }
 
@@ -2335,6 +2302,7 @@ function forceSaveData() {
         startY = e.touches[0].clientY - posY;
       } else if (e.touches.length === 2) {
         isDragging = false;
+        isPinching = true; // 记录：进入了双指放大模式
         initialDistance = getDistance(e.touches);
         lastScale = scale;
       }
@@ -2354,28 +2322,35 @@ function forceSaveData() {
       }
     }, { passive: false });
 
+    let lastTap = 0;
     wrapper.addEventListener('touchend', (e) => {
       if (e.touches.length === 0) {
         isDragging = false;
         initialDistance = null;
-        if (scale <= 1) resetTransform();
-      }
-    });
-
-    // 双击快速放大/还原
-    let lastTap = 0;
-    wrapper.addEventListener('touchend', (e) => {
-      const currentTime = new Date().getTime();
-      const tapLength = currentTime - lastTap;
-      if (tapLength < 300 && tapLength > 0) {
-        if (scale > 1) {
-          resetTransform();
-        } else {
-          scale = 2.5;
-          updateTransform();
+        
+        if (scale <= 1) {
+            resetTransform();
         }
+
+        // 🌟 核心拦截逻辑：如果是刚刚完成捏合松手，直接强行打断，绝不触发下方的双击还原！
+        if (isPinching) {
+            isPinching = false;
+            lastTap = 0; // 清空双击计时器
+            return; 
+        }
+
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          if (scale > 1) {
+            resetTransform();
+          } else {
+            scale = 2.5;
+            updateTransform();
+          }
+        }
+        lastTap = currentTime;
       }
-      lastTap = currentTime;
     });
 </script>
 
