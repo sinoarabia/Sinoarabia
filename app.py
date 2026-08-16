@@ -90,19 +90,19 @@ def ai_ocr():
     print("\n" + "="*50)
     print("🔍 收到网页发来的图片，正在连接 Google AI...")
 
-    # 模型池：向下兼容，确保识别绝对可用
+    # 模型池：恢复为你原本正确的 3.x 模型
     target_models = [
-        "gemini-2.5-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite"
     ]
 
-    # 修复了 Google API 严格要求的下划线参数命名规范
+    # 恢复为你原本正确的驼峰命名参数
     payload = {
         "contents": [{
             "parts": [
                 {"text": prompt_text},
-                {"inline_data": {"mime_type": mime_type, "data": base64_image}}
+                {"inlineData": {"mimeType": mime_type, "data": base64_image}}
             ]
         }],
         "generationConfig": {"temperature": 0.1}
@@ -149,5 +149,4 @@ if __name__ == '__main__':
     print("🚀 CCSA JV 终极版后台已启动！")
     print("✅ 已包含：在线审批流引擎 + AI 智能识票引擎")
     print("="*50)
-    # Render 部署必备：监听 0.0.0.0 才能外网访问
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
