@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sinoarabia | VIP Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --card-bg: rgba(18, 22, 34, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-gold: #c5a880;
+      --accent-cyan: #38bdf8;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* 背景动态光晕 */
+    .ambient-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      opacity: 0.25;
+      z-index: 0;
+    }
+    .glow-1 { top: -100px; left: -100px; background: #2563eb; }
+    .glow-2 { bottom: -100px; right: -100px; background: #c5a880; }
+
+    /* 核心卡片 */
+    .vip-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 40px 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      text-align: center;
+    }
+
+    /* 品牌标识 */
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      margin-bottom: 20px;
+      color: var(--accent-gold);
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(180deg, #FFFFFF 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+    }
+
+    /* 表单控件 */
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .vip-input {
+      width: 100%;
+      height: 52px;
+      background: rgba(10, 14, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 0 16px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .vip-input:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.15);
+      background: rgba(10, 14, 23, 0.85);
+    }
+
+    .vip-btn {
+      width: 100%;
+      height: 52px;
+      background: linear-gradient(135deg, #d4b48a 0%, #b89569 100%);
+      color: #0b0f19;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      margin-bottom: 28px;
+    }
+
+    .vip-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(197, 168, 128, 0.25);
+    }
+
+    .error-text {
+      color: #f87171;
+      font-size: 13px;
+      margin-top: -6px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* 多语言国际提示区 */
+    .notice-divider {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .notice-divider::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    }
+
+    .notice-badge {
+      position: relative;
+      background: #111624;
+      padding: 2px 12px;
+      font-size: 11px;
+      color: #64748b;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .multilingual-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .lang-item {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .lang-code {
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 600;
+      width: 28px;
+      text-transform: uppercase;
+    }
+
+    .lang-text {
+      color: #94a3b8;
+      flex: 1;
+      text-align: right;
+    }
+
+    .lang-ar {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      direction: rtl;
+      font-size: 12.5px;
+    }
+
+    /* 振动动画（密码错误时） */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake {
+      animation: shake 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- 锁屏容器 -->
+  <div class="vip-card" id="lockCard">
+    <div class="brand-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+
+    <h1 class="brand-title">Sinoarabia.com</h1>
+    <p class="brand-subtitle">VIP Portal Access</p>
+
+    <div class="input-wrapper">
+      <input type="text" id="vipUser" class="vip-input" placeholder="Account / 账号" />
+      <input type="password" id="vipPass" class="vip-input" placeholder="Password / 密码" />
+    </div>
+    
+    <div id="errorMsg" class="error-text">Invalid account or password / 账号或密码无效</div>
+
+    <button class="vip-btn" onclick="verifyLogin()">
+      <span>Enter Workspace</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </button>
+
+    <!-- 6 种语言国际规范提醒 -->
+    <div class="notice-divider">
+      <span class="notice-badge">Official Notice</span>
+    </div>
+
+    <div class="multilingual-container">
+      <div class="lang-item">
+        <span class="lang-code">EN</span>
+        <span class="lang-text">Private Website · Not for Sale</span>
+      </div>
+      <div class="lang-item">
+        <span class="lang-code">ZH</span>
+        <span class="lang-text">私人专属网站 · 暂不出售</span>
+      </div>
+      <div class="lang-item">
+        <span class="lang-code">AR</span>
+        <span class="lang-text lang-ar">موقع إلكتروني خاص · غير معروض للبيع</span>
+      </div>
+      <div class="lang-item">
+        <span class="lang-code">JA</span>
+        <span class="lang-text">プライベートサイト · 非売品</span>
+      </div>
+      <div class="lang-item">
+        <span class="lang-code">FR</span>
+        <span class="lang-text">Site Web Privé · Non disponible à la vente</span>
+      </div>
+      <div class="lang-item">
+        <span class="lang-code">RU</span>
+        <span class="lang-text">Частный веб-сайт · Не для продажи</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 解锁后的内容容器（初始隐藏） -->
+  <div id="protectedContent" style="display: none; position: relative; z-index: 2; color: #fff;">
+    <!-- 你的正式网站内容放置在此处 -->
+  </div>
+
+  <script>
+    // 在这里配置你的 VIP 专属账号和密码
+    const VIP_USER = "iiavatar";
+    const VIP_PASSWORD = "Zhang8319987";
+
+    // 检查是否已经解锁过
+    if (sessionStorage.getItem("sino_auth") === "granted") {
+      unlockSite();
+    }
+
+    function verifyLogin() {
+      const user = document.getElementById("vipUser");
+      const pass = document.getElementById("vipPass");
+      const card = document.getElementById("lockCard");
+      const err = document.getElementById("errorMsg");
+
+      if (user.value === VIP_USER && pass.value === VIP_PASSWORD) {
+        sessionStorage.setItem("sino_auth", "granted");
+        unlockSite();
+      } else {
+        card.classList.remove("shake");
+        void card.offsetWidth; // 触发重绘
+        card.classList.add("shake");
+        err.style.display = "block";
+        pass.value = ""; // 清空密码框
+      }
+    }
+
+    function unlockSite() {
+      document.getElementById("lockCard").style.display = "none";
+      document.querySelectorAll(".ambient-glow").forEach(el => el.style.display = "none");
+      document.getElementById("protectedContent").style.display = "block";
+    }
+
+    // 支持按回车键直接提交 (在密码框内按回车)
+    document.getElementById("vipPass").addEventListener("keyup", function(event) {
+      if (event.key === "Enter") {
+        verifyLogin();
+      }
+    });
+  </script>
+</body>
+</html>
