@@ -47,7 +47,6 @@
         .manual-save-btn:hover { background: #dc3545; color: white; }
         #manual_save_toast { font-size: 13px; color: #28a745; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; margin-left: 10px; }
 
-        /* 单据表头与无痕主副标题样式 */
         .doc-title { text-align: center; margin-bottom: 20px; }
         .title-input { width: 100%; text-align: center; font-size: 28px; font-weight: bold; font-family: 'Times New Roman', 'SimSun', serif; border: none; border-bottom: 1px dashed transparent; background: transparent; margin: 0; padding: 0; letter-spacing: 1px; color: #000; }
         .title-input:hover, .title-input:focus { border-bottom: 1px dashed #004080; outline: none; }
@@ -161,7 +160,6 @@
     <option value="CCSA"></option>
     <option value="CCECC"></option>
     <option value="CCSA JV"></option>
-    <option value="CCECC&JSC JV"></option>
 </datalist>
 
 <datalist id="title_h2_list">
@@ -199,7 +197,6 @@
             <button class="undo-btn" id="undo_btn" onclick="undoClear()" title="恢复最后一次清空的数据">↩️ 撤销清空</button>
             <button class="clear-btn" onclick="clearLocalData()">🗑️ 清空数据</button>
             
-            <!-- 局域网审批按钮，默认隐藏，仅在采购单标签页显示 -->
             <button class="export-btn lan-approval-btn" style="background:#6f42c1; border-color:#6f42c1; display:none;" onclick="submitToLan()">🚀 发起审批快照</button>
             <button class="export-btn lan-approval-btn" style="background:#fd7e14; border-color:#fd7e14; display:none;" onclick="loadLanSignatures()">✍️ 刷新领导签字</button>
             
@@ -1833,9 +1830,9 @@ function forceSaveData() {
         let purchaseDiv = document.getElementById('purchase');
         let cloneNode = purchaseDiv.cloneNode(true);
         
-        // 2. 清理不需要领导看到的多余元素
+        // 2. 清理不需要领导看到的多余元素（🚨 这里修复了备注列丢失的问题）
         cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
-        cloneNode.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove()); 
+        // 🚨 删除之前那行无脑去 last-child 的错误代码，保留原本所有的 7 列！
         
         // 3. 将输入框里的值固化为纯文本
         let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
