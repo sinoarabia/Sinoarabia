@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CCSA JV - Online Approval</title>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Arial'; background-color: #f4f7f6; padding: 15px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        h2 { color: #004080; margin-top: 0; text-align: center; font-size: 22px; margin-bottom: 25px; }
+        h2 span { font-size: 16px; color: #555; display: block; margin-top: 5px; font-weight: normal; }
+        
+        .bi-text { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 10px; }
+        .bi-text.left { align-items: flex-start; text-align: left; }
+        .bi-en { font-weight: bold; font-size: 15px; color: #333; }
+        .bi-ar { font-size: 14px; color: #666; margin-top: 3px; font-family: Arial, sans-serif; direction: rtl; }
+        
+        /* 预览区域样式 (加入相对定位，用于叠加签名) */
+        .preview-box { background: #fafafa; border: 1px solid #ddd; padding: 10px; border-radius: 5px; margin-bottom: 25px; cursor: pointer; position: relative; overflow: hidden; }
+        .preview-box img.doc-img { width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; }
+        .preview-box p { margin: 0; text-align: center; font-size: 12px; color: #004080; font-weight: bold; padding-top: 8px;}
+        
+        /* 签名叠加层 */
+        .stamps-overlay { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: space-around; pointer-events: none; }
+        .stamps-overlay div { text-align: center; }
+        .stamps-overlay img { width: 120px; height: auto; mix-blend-mode: multiply; }
+
+        .instruction-box { background: #e9f5ff; border-left: 4px solid #004080; padding: 12px 15px; border-radius: 4px; margin-bottom: 20px; }
+
+        /* 独立签名区 */
+        .pad-section { margin-bottom: 25px; background: #fff; border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .pad-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed #eee; padding-bottom: 10px; }
+        .btn-clear-small { background: #f8f9fa; color: #dc3545; border: 1px solid #dc3545; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        
+        .canvas-container { border: 2px dashed #004080; background: #fffde7; border-radius: 5px; touch-action: none; position: relative; overflow: hidden; }
+        canvas { width: 100%; height: 180px; display: block; }
+        
+        /* 锁定后的只读图片样式 */
+        .locked-sig { width: 100%; height: 180px; object-fit: contain; pointer-events: none; background: #f1f3f5; }
+        .locked-badge { position: absolute; top: 10px; left: 10px; background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        .btn-submit { width: 100%; margin-top: 15px; padding: 12px 0; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; background: #28a745; transition: 0.2s; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3; }
+        .btn-submit:active { background: #218838; transform: translateY(2px); box-shadow: none; }
+        .btn-submit:disabled { background: #6c757d; box-shadow: none; cursor: not-allowed; }
+        .btn-submit span { font-size: 13px; font-weight: normal; margin-top: 4px; }
+
+        /* 改进的图片放大模态框（支持顺滑拖拽） */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.92); z-index: 9999; }
+        .modal-controls { position: absolute; top: 0; left: 0; width: 100%; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; background: linear-gradient(rgba(0,0,0,0.8), transparent); z-index: 10001; }
+        .btn-zoom { padding: 8px 20px; font-size: 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); background: rgba(0,64,128,0.8); color: white; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .close-btn { color: white; font-size: 35px; cursor: pointer; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        
+        /* 核心拖拽缩放层 */
+        .modal-scroll-area { width: 100%; height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; padding-top: 80px; box-sizing: border-box; text-align: center; }
+        .modal-img-wrapper { position: relative; display: inline-block; transition: width 0.3s ease; width: 100%; max-width: 800px; background: white; border-radius: 4px; }
+        .modal-img-wrapper.zoomed { width: 250%; max-width: none; text-align: left; }
+        #modalImg { width: 100%; display: block; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>
+            CCSA JV Online Signature
+            <span>توقيع CCSA JV عبر الإنترنت</span>
+        </h2>
+        
+        <div class="bi-text">
+            <span class="bi-en">🔍 Document Preview</span>
+            <span class="bi-ar">معاينة المستند</span>
+        </div>
+        
+        <div class="preview-box" id="preview_container">
+            <div id="loading_text" style="text-align:center; color:#999; padding: 20px;">Loading details... / جاري تحميل التفاصيل...</div>
+            <!-- 图片占位 -->
+            <div id="doc_content" style="display:none; position: relative;"></div>
+            <!-- 叠加签名区 -->
+            <div class="stamps-overlay" id="preview_stamps"></div>
+            <p id="zoom_hint" style="display:none;">👆 Click image to enlarge / انقر على الصورة للتكبير</p>
+        </div>
+
+        <div class="instruction-box">
+            <div class="bi-text left" style="margin-bottom: 0;">
+                <span class="bi-en">📝 Note: Please DPD and PD sign in your corresponding areas below.</span>
+                <span class="bi-ar">ملاحظة: يرجى من نائب مدير المشروع (DPD) ومدير المشروع (PD) التوقيع في المناطق المخصصة أدناه.</span>
+            </div>
+        </div>
+
+        <!-- 画板 1: DPD -->
+        <div class="pad-section">
+            <div class="pad-header">
+                <div class="bi-text left" style="margin-bottom:0;">
+                    <span class="bi-en">Deputy Project Director (DPD)</span>
+                    <span class="bi-ar">نائب مدير المشروع</span>
+                </div>
+                <button class="btn-clear-small" id="btn-clear-dpd" onclick="padDpd.clear()">Clear / مسح</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas-dpd"></canvas>
+                <img id="img-dpd" class="locked-sig" style="display:none;" src="">
+                <div id="badge-dpd" class="locked-badge" style="display:none;">✅ Already Signed</div>
+            </div>
+            <!-- DPD 独立提交按钮 -->
+            <button class="btn-submit" id="btn-submit-dpd" onclick="submitSignature('dpd')">
+                ✅ Submit DPD Signature
+                <span>إرسال توقيع نائب مدير المشروع</span>
+            </button>
+        </div>
+
+        <!-- 画板 2: PD -->
+        <div class="pad-section" style="margin-bottom: 10px;">
+            <div class="pad-header">
+                <div class="bi-text left" style="margin-bottom:0;">
+                    <span class="bi-en">Project Director (PD)</span>
+                    <span class="bi-ar">مدير المشروع</span>
+                </div>
+                <button class="btn-clear-small" id="btn-clear-pd" onclick="padPd.clear()">Clear / مسح</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="canvas-pd"></canvas>
+                <img id="img-pd" class="locked-sig" style="display:none;" src="">
+                <div id="badge-pd" class="locked-badge" style="display:none;">✅ Already Signed</div>
+            </div>
+            <!-- PD 独立提交按钮 -->
+            <button class="btn-submit" id="btn-submit-pd" onclick="submitSignature('pd')">
+                ✅ Submit PD Signature
+                <span>إرسال توقيع مدير المشروع</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- 沉浸式拖拽放大模态框 -->
+    <div id="imageModal" class="modal-overlay">
+        <div class="modal-controls">
+            <button class="btn-zoom" id="zoomBtn" onclick="toggleZoom()">🔍 Zoom In (تكبير)</button>
+            <div class="close-btn" onclick="document.getElementById('imageModal').style.display='none'">&times;</div>
+        </div>
+        <div class="modal-scroll-area">
+            <div class="modal-img-wrapper" id="modalWrapper">
+                <img id="modalImg" src="">
+                <!-- 全屏模式下同样盖章 -->
+                <div class="stamps-overlay" id="modal_stamps" style="bottom: 5%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dpdSigned = false;
+        let pdSigned = false;
+
+        // 1. 初始化拉取数据
+        window.onload = function() {
+            fetch('/api/pending_list')
+            .then(res => res.json())
+            .then(data => {
+                if(data.current_form && data.current_form.html_content) {
+                    document.getElementById('loading_text').style.display = 'none';
+                    document.getElementById('doc_content').innerHTML = data.current_form.html_content;
+                    document.getElementById('doc_content').style.display = 'block';
+                    document.getElementById('zoom_hint').style.display = 'block';
+
+                    // 如果后端已有签名，直接加载并锁定画板和按钮
+                    if(data.current_form.signatures) {
+                        const sigs = data.current_form.signatures;
+                        if(sigs.deputy) lockPad('dpd', sigs.deputy);
+                        if(sigs.manager) lockPad('pd', sigs.manager);
+                    }
+                }
+            });
+        };
+
+        // 2. 图片放大拖拽逻辑
+        let isZoomed = false;
+        document.getElementById('preview_container').addEventListener('click', function(e) {
+            let imgNode = document.getElementById('doc_content').querySelector('img');
+            if(imgNode && imgNode.src) {
+                document.getElementById('modalImg').src = imgNode.src;
+                document.getElementById('modalWrapper').classList.remove('zoomed');
+                document.getElementById('zoomBtn').innerText = '🔍 Zoom In (تكبير)';
+                isZoomed = false;
+                syncStamps(); // 同步全屏图的盖章
+                document.getElementById('imageModal').style.display = 'block';
+            }
+        });
+
+        function toggleZoom() {
+            isZoomed = !isZoomed;
+            if(isZoomed) {
+                document.getElementById('modalWrapper').classList.add('zoomed');
+                document.getElementById('zoomBtn').innerText = '➖ Zoom Out (تصغير)';
+            } else {
+                document.getElementById('modalWrapper').classList.remove('zoomed');
+                document.getElementById('zoomBtn').innerText = '🔍 Zoom In (تكبير)';
+            }
+        }
+
+        // 3. 画板初始化与自适应
+        const canvasDpd = document.getElementById('canvas-dpd');
+        const canvasPd = document.getElementById('canvas-pd');
+        const padDpd = new SignaturePad(canvasDpd, { penColor: "rgb(0, 0, 0)", minWidth: 2, maxWidth: 4 });
+        const padPd = new SignaturePad(canvasPd, { penColor: "rgb(0, 0, 0)", minWidth: 2, maxWidth: 4 });
+
+        function resizeCanvases() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            [ {cvs: canvasDpd, pad: padDpd, locked: dpdSigned}, {cvs: canvasPd, pad: padPd, locked: pdSigned} ].forEach(item => {
+                if(item.locked) return; // 锁定的不需要重绘
+                const data = item.pad.toData();
+                item.cvs.width = item.cvs.offsetWidth * ratio;
+                item.cvs.height = item.cvs.offsetHeight * ratio;
+                item.cvs.getContext("2d").scale(ratio, ratio);
+                item.pad.fromData(data);
+            });
+        }
+        window.onresize = resizeCanvases;
+        resizeCanvases();
+
+        // 4. 锁定画板、隐藏提交和清除按钮，并将字迹盖到主图上
+        function lockPad(role, dataUrl) {
+            // 隐藏画板和操作按钮
+            document.getElementById(`canvas-${role}`).style.display = 'none';
+            document.getElementById(`btn-clear-${role}`).style.display = 'none';
+            document.getElementById(`btn-submit-${role}`).style.display = 'none';
+            
+            // 显示已签名的图片和绿标
+            let imgEl = document.getElementById(`img-${role}`);
+            imgEl.src = dataUrl;
+            imgEl.style.display = 'block';
+            document.getElementById(`badge-${role}`).style.display = 'block';
+
+            if(role === 'dpd') dpdSigned = true;
+            if(role === 'pd') pdSigned = true;
+
+            syncStamps(); // 实时渲染到顶部的单据图片区
+        }
+
+        function syncStamps() {
+            let html = '';
+            if(dpdSigned) {
+                html += `<div><span style="font-size:11px;color:#004080;font-weight:bold;">DPD</span><br><img src="${document.getElementById('img-dpd').src}"></div>`;
+            }
+            if(pdSigned) {
+                html += `<div><span style="font-size:11px;color:#004080;font-weight:bold;">PD</span><br><img src="${document.getElementById('img-pd').src}"></div>`;
+            }
+            document.getElementById('preview_stamps').innerHTML = html;
+            document.getElementById('modal_stamps').innerHTML = html;
+        }
+
+        // 5. 独立提交逻辑
+        function submitSignature(role) {
+            let pad, backendRole, btnId;
+            if (role === 'dpd') {
+                pad = padDpd;
+                backendRole = 'deputy';
+            } else {
+                pad = padPd;
+                backendRole = 'manager';
+            }
+            
+            btnId = `btn-submit-${role}`;
+            const btnSave = document.getElementById(btnId);
+
+            if (pad.isEmpty()) {
+                alert("Please provide your signature first! \n يرجى تقديم توقيعك أولاً!");
+                return;
+            }
+
+            const url = pad.toDataURL('image/png');
+            const originalHtml = btnSave.innerHTML; // 保存原本按钮的文字
+            
+            btnSave.innerHTML = 'Submitting...<br><span>جاري الإرسال...</span>';
+            btnSave.disabled = true;
+
+            fetch('/api/sign', {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: backendRole, signature: url })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('🎉 Signature submitted successfully! \n تم إرسال التوقيع بنجاح!');
+                    lockPad(role, url); // 成功后直接锁定，整个提交按钮将消失
+                } else {
+                    alert('❌ Submit failed. \n فشل الإرسال.');
+                    btnSave.innerHTML = originalHtml;
+                    btnSave.disabled = false;
+                }
+            })
+            .catch(err => {
+                alert('Network error, please check the connection. \n خطأ في الشبكة، يرجى التحقق من الاتصال.');
+                btnSave.innerHTML = originalHtml;
+                btnSave.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单据在线生成管理系统</title>
+    <!-- 引入强大的带样式支持的 Excel 导出引擎 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- 🌟 新增：引入高清截图引擎 html2canvas 🌟 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        body { font-family: 'Times New Roman', 'SimSun', serif; padding: 20px; background-color: #eef2f5; }
+        .container { max-width: 1550px; margin: auto; background: white; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-height: 800px; position: relative; }
+        
+        .header-nav { display: flex; flex-direction: column; margin-bottom: 20px; }
+        
+        .tabs-row { display: flex; border-bottom: 2px solid #004080; align-items: flex-end; }
+        .tab { padding: 10px 25px; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #f8f9fa; margin-right: 4px; border-radius: 6px 6px 0 0; font-family: 'Microsoft YaHei', sans-serif; font-size: 15px; color: #555; transition: 0.2s; }
+        .tab:hover { background: #e2e6ea; }
+        .tab.active { background: #004080; color: white; font-weight: bold; border-color: #004080; }
+        
+        .action-row { display: flex; justify-content: flex-start; align-items: center; gap: 8px; padding-top: 10px; position: relative; }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .import-btn { padding: 6px 12px; background: #6c757d; border: 1px solid #6c757d; color: white; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .import-btn:hover { background: #5a6268; }
+        
+        .undo-btn { padding: 6px 12px; background: #ffc107; border: 1px solid #ffc107; color: #212529; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; display: none; }
+        .undo-btn:hover { background: #e0a800; }
+        
+        .print-btn { padding: 6px 12px; background: #17a2b8; border: 1px solid #17a2b8; color: white; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .print-btn:hover { background: #138496; border-color: #117a8b; }
+        
+        .export-btn { padding: 6px 12px; background: #28a745; border: 1px solid #28a745; color: white; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .export-btn:hover { background: #218838; }
+        
+        .clear-btn { padding: 6px 12px; background: #fff; border: 1px solid #d9534f; color: #d9534f; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .clear-btn:hover { background: #d9534f; color: white; }
+
+        .ai-btn { padding: 6px 12px; background: #004080; border: 1px solid #004080; color: white; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .ai-btn:hover { background: #003366; border-color: #003366; }
+
+        .manual-save-btn { padding: 6px 12px; background: #fff; border: 1px solid #dc3545; color: #dc3545; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .manual-save-btn:hover { background: #dc3545; color: white; }
+        #manual_save_toast { font-size: 13px; color: #28a745; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; margin-left: 10px; }
+
+        /* 单据表头与无痕主副标题样式 */
+        .doc-title { text-align: center; margin-bottom: 20px; }
+        .title-input { width: 100%; text-align: center; font-size: 28px; font-weight: bold; font-family: 'Times New Roman', 'SimSun', serif; border: none; border-bottom: 1px dashed transparent; background: transparent; margin: 0; padding: 0; letter-spacing: 1px; color: #000; }
+        .title-input:hover, .title-input:focus { border-bottom: 1px dashed #004080; outline: none; }
+        
+        .title-h2 { width: 100%; text-align: center; font-size: 22px; font-weight: bold; font-family: 'Times New Roman', 'SimSun', serif; border: none; border-bottom: 1px dashed transparent; background: transparent; margin: 5px 0; padding: 0; letter-spacing: 2px; color: #000; }
+        .title-h2:hover, .title-h2:focus { border-bottom: 1px dashed #004080; outline: none; }
+        
+        .title-h3 { width: 100%; text-align: center; font-size: 16px; font-weight: normal; font-family: 'Times New Roman', 'SimSun', serif; border: none; border-bottom: 1px dashed transparent; background: transparent; margin: 0; padding: 0; color: #000; }
+        .title-h3:hover, .title-h3:focus { border-bottom: 1px dashed #004080; outline: none; }
+        
+        .doc-title input::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer; transition: 0.2s; }
+        .doc-title input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+        .header-info { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
+        .header-info input { border: none; border-bottom: 1px solid #000; font-family: inherit; font-size: 14px; text-align: center; font-weight: bold; background: transparent; }
+        .header-info input:focus { outline: none; border-bottom: 2px solid #004080; }
+        
+        input[type="date"] { font-family: 'Times New Roman', 'SimSun', serif; cursor: pointer; }
+
+        .global-rate-box { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px 15px; border-radius: 5px; display: inline-flex; align-items: center; gap: 10px; font-family: 'Microsoft YaHei', sans-serif; margin-bottom: 10px; }
+        .global-rate-box label { color: #856404; font-weight: bold; font-size: 14px; }
+        .global-rate-box input { width: 80px; background: white; border: 1px solid #ccc; padding: 4px; font-size: 16px; color: #d9534f; font-weight: bold; text-align: center; border-radius: 3px; }
+        .global-rate-box input:focus { outline: none; border-color: #004080; }
+        
+        .currency-select { padding: 2px; border: 1px solid #004080; border-radius: 3px; font-weight: bold; background: #fffde7; cursor: pointer; font-family: inherit; font-size: 14px; color: #004080; }
+        .currency-select:focus { outline: none; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 14px; table-layout: fixed; }
+        th, td { border: 1px solid #000; padding: 6px 4px; text-align: center; vertical-align: middle; position: relative; overflow: visible; }
+        th { font-weight: bold; background-color: #fcfcfc; }
+        
+        .resizer { position: absolute; top: 0; right: -4px; width: 8px; height: 100%; cursor: col-resize; user-select: none; z-index: 20; }
+        .resizer:hover, .resizing { background-color: #004080; opacity: 0.4; }
+
+        .input-cell { width: 90%; padding: 4px; text-align: center; border: 1px solid #ccc; background-color: #fffde7; font-family: inherit; font-size: 14px; box-sizing: border-box; }
+        .input-cell:focus { outline: none; border-color: #004080; background-color: #fff; box-shadow: 0 0 3px rgba(0,64,128,0.5); }
+        .readonly-cell { background-color: transparent; border: none; font-family: inherit; text-align: center; font-size: 14px; width: 100%; pointer-events: none; }
+        
+        .flex-textarea { width: 100%; min-height: 28px; box-sizing: border-box; background-color: transparent; border: none; font-family: inherit; text-align: center; font-size: 14px; resize: both; overflow: hidden; word-wrap: break-word; white-space: pre-wrap; vertical-align: middle; line-height: 1.4; padding: 4px; pointer-events: auto !important; }
+        .flex-textarea[readonly] { cursor: default; }
+        .flex-textarea:focus { outline: none; border-color: #004080; }
+
+        .index-table th { background-color: #e9ecef; font-size: 13px; }
+        .index-table .input-cell { background-color: #fff; border: 1px solid #eee; }
+        .index-table tr:hover { background-color: #f1f8ff; }
+
+        .tfoot-row { font-weight: bold; }
+        .signature-area { margin-top: 30px; font-size: 14px; font-weight: bold; display: flex; justify-content: space-around; flex-wrap: wrap;}
+        .sig-row { display: flex; justify-content: space-between; margin-bottom: 40px; width: 100%;}
+        .sig-row.staggered-3 { padding: 0 12.5%; box-sizing: border-box; }
+        .sig-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .sig-item span.en { font-weight: normal; font-size: 12px; margin-top: 4px; color: #333; }
+
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 14px; font-weight: bold; }
+        .action-btn.del { color: #d9534f; }
+        .add-row-container { text-align: right; margin-top: 10px; }
+        .add-row-btn { padding: 6px 15px; background-color: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-family: 'Microsoft YaHei', sans-serif; font-size: 14px; }
+        .add-row-btn:hover { background-color: #003366; }
+
+        .boss-mark { text-align: right; margin-top: 40px; padding-right: 15px; font-size: 13px; font-weight: bold; color: #b0bac3; font-family: 'Microsoft YaHei', sans-serif; font-style: italic; letter-spacing: 2px; user-select: none; pointer-events: none; }
+
+        .bottom-ai-config { margin-top: 50px; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 15px; font-family: 'Microsoft YaHei', sans-serif; box-shadow: inset 0 2px 5px rgba(0,0,0,0.02); }
+        .bottom-ai-config h4 { margin: 0; color: #495057; font-size: 16px; }
+        .api-key-box-large { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap;}
+        .api-key-box-large input { width: 450px; background: white; border: 1px solid #ced4da; padding: 8px 12px; font-size: 14px; color: #495057; font-family: monospace; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .api-key-box-large input:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+        
+        .api-save-btn { padding: 8px 25px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2); }
+        .api-save-btn:hover { background-color: #218838; }
+        .api-link-btn { padding: 8px 15px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        @media print {
+            @page { size: A4 landscape; margin: 8mm; }
+            body { margin: 0; background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            .no-print, .resizer, .header-nav, .global-rate-box, .add-row-container, .bottom-ai-config { display: none !important; }
+            
+            .container { box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; min-height: auto !important; }
+            
+            .doc-title { margin-bottom: 10px !important; }
+            
+            .input-cell, .readonly-cell, .flex-textarea, .title-h2, .title-h3 { 
+                border: none !important; background: transparent !important; box-shadow: none !important; width: 100% !important; 
+                padding: 0 !important; margin: 0 !important; outline: none !important; resize: none !important; 
+                overflow: visible !important; white-space: pre-wrap !important; color: #000 !important;
+            }
+            .title-h2 { font-size: 20px !important; font-weight: bold !important; margin: 5px 0 !important;}
+            .title-h3 { font-size: 14px !important; margin: 0 !important;}
+
+            .currency-select { border: none !important; appearance: none !important; -webkit-appearance: none !important; background: transparent !important; padding: 0 !important; color: #000 !important; font-weight: bold; }
+            .title-input { border-bottom: none !important; color: #000 !important; }
+            .header-info input { color: #000 !important; border-bottom: 1px solid #000 !important; }
+
+            input::-webkit-calendar-picker-indicator { display: none !important; -webkit-appearance: none; }
+            input::-webkit-inner-spin-button { display: none !important; }
+
+            table { width: 100% !important; border-collapse: collapse; margin-top: 5px; font-size: 13px !important; }
+            tr { page-break-inside: avoid; } 
+            thead { display: table-header-group; }
+            tfoot { display: table-row-group; }
+            th, td { border: 1px solid #000 !important; padding: 3px 2px !important; color: #000 !important; word-wrap: break-word; }
+            
+            .signature-area { page-break-inside: avoid; margin-top: 15px !important; }
+            .sig-row { margin-bottom: 15px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<datalist id="title_main_list">
+    <option value="CCSA"></option>
+    <option value="CCECC"></option>
+    <option value="CCSA JV"></option>
+    <option value="CCECC&JSC JV"></option>
+</datalist>
+
+<datalist id="title_h2_list">
+    <option value="费用报销单"></option>
+    <option value="费用报销单 (AI 智能版)"></option>
+    <option value="后勤、办公用品 采 购 申 请 表"></option>
+    <option value="后勤、办公用品采购表"></option>
+    <option value="入 库 单"></option>
+    <option value="出 库 单"></option>
+</datalist>
+
+<datalist id="title_h3_list">
+    <option value="(Expense Reimbursement Request)"></option>
+    <option value="(Expense Reimbursement Request - Smart Entry)"></option>
+    <option value="Logistics and Office Supplies Procurement Application Form of Jordan"></option>
+    <option value="Logistics and Office Supplies Procurement Order"></option>
+    <option value="Stock In"></option>
+    <option value="Stock Out"></option>
+</datalist>
+
+<div class="container">
+    <div class="header-nav no-print">
+        <div class="tabs-row">
+            <div class="tab active" onclick="switchTab('index_view', this)">📑 索引 (数据源)</div>
+            <div class="tab" onclick="switchTab('reimbursement', this)">报销单</div>
+            <div class="tab" onclick="switchTab('purchase', this)">采购申请单</div>
+            <div class="tab" onclick="switchTab('receipt', this)">入库单</div>
+            <div class="tab" onclick="switchTab('issue', this)">出库单</div>
+            <div class="tab" onclick="switchTab('ai_reimbursement', this)">AI识别报销单</div>
+        </div>
+        
+        <div class="action-row">
+            <button class="print-btn" onclick="window.print()">🖨️ 打印当前表格</button>
+            <button class="export-btn" onclick="exportToExcel()">📥 导出当前表格</button>
+            <button class="undo-btn" id="undo_btn" onclick="undoClear()" title="恢复最后一次清空的数据">↩️ 撤销清空</button>
+            <button class="clear-btn" onclick="clearLocalData()">🗑️ 清空数据</button>
+            
+            <!-- 局域网审批按钮，默认隐藏，仅在采购单标签页显示 -->
+            <button class="export-btn lan-approval-btn" style="background:#6f42c1; border-color:#6f42c1; display:none;" onclick="submitToLan()">🚀 发起审批快照</button>
+            <button class="export-btn lan-approval-btn" style="background:#fd7e14; border-color:#fd7e14; display:none;" onclick="loadLanSignatures()">✍️ 刷新领导签字</button>
+            
+            <input type="file" id="import_json_input" accept=".json" style="display:none" onchange="importJsonData(event)">
+            <button class="import-btn" onclick="document.getElementById('import_json_input').click()" title="加载下载好的.json文件，秒恢复数据">📂 导入备份</button>
+            
+            <button class="manual-save-btn" onclick="forceSaveData()">💾 手动保存并下载备份</button>
+            
+            <div id="ai_btn_wrapper" style="display: none;">
+                <button class="ai-btn" onclick="openSmartPasteModal()">🤖 AI智能识票</button>
+            </div>
+
+            <span id="manual_save_toast">✓ 缓存成功 & 备份已下载</span>
+        </div>
+    </div>
+
+    <!-- ================= 0. 索引页面 ================= -->
+    <div id="index_view" class="tab-content active">
+        <div class="global-rate-box no-print">
+            <label for="global_rate">💱 汇率设置 (Exchange Rate)：</label>
+            1 USD = <input type="number" id="global_rate" value="0.708" step="0.001" oninput="recalculateAll()"> JD
+            <span id="save_toast" style="font-size: 12px; color: #28a745; margin-left: 10px; font-weight: bold; opacity: 0; transition: opacity 0.5s;">✓ 已自动保存</span>
+        </div>
+
+        <div class="doc-title no-print">
+            <input type="text" class="title-input" id="title_index" value="后台数据索引表 (Index Data)" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <h3 style="color: #666; margin-top:10px;">删除后，下面的序号自动按逻辑更新。支持直接从 Excel 复制多行多列，在此处任意输入框 <b>Ctrl+V</b> 粘贴即可</h3>
+        </div>
+        <table class="index-table" id="table_index_view">
+            <thead>
+                <tr>
+                    <th width="7%">日期<br>Date</th>
+                    <th width="4%">序号<br>S/N</th>
+                    <th width="5%">单据张数<br>Attach.</th>
+                    <th width="12%">物品名称<br>Item Name</th>
+                    <th width="9%">规格型号<br>Spec</th>
+                    <th width="6%">类别<br>Category</th>
+                    <th width="4%">单位<br>Unit</th>
+                    <th width="6%">单价(JD)<br>Price</th>
+                    <th width="4%">数量<br>Qty</th>
+                    <th width="7%">税前金额<br>Pre-tax</th>
+                    <th width="6%">税费<br>Tax</th>
+                    <th width="8%">含税金额(<select class="currency-select" id="idx_currency" onchange="recalculateAll()">
+                        <option value="JD" selected>JD</option>
+                        <option value="USD">USD</option>
+                        <option value="AED">AED</option>
+                    </select>)<br>Amount</th>
+                    <th width="8%">用途<br>Purpose</th>
+                    <th width="7%">成本中心<br>Cost Center</th>
+                    <th width="4%">备注<br>Remark</th>
+                    <th width="3%" class="no-print">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_index"></tbody>
+        </table>
+        <div class="add-row-container no-print">
+            <button class="add-row-btn" onclick="addIndexRow(true)">+ 新增一行</button>
+        </div>
+        <div class="boss-mark no-print">老板专属表格iiavatar</div>
+    </div>
+
+    <!-- ================= 1. 报销单 ================= -->
+    <div id="reimbursement" class="tab-content">
+        <div class="doc-title">
+            <input type="text" class="title-input" id="title_reim" value="CCSA JV" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h2" id="title_reim_h2" value="费用报销单" list="title_h2_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h3" id="title_reim_h3" value="(Expense Reimbursement Request)" list="title_h3_list" onfocus="this.select()" oninput="saveDataToLocal()">
+        </div>
+        <div class="header-info">
+            <div>报销单位: <input type="text" id="reim_dept" value="Amman Office" style="width: 150px;" oninput="saveDataToLocal()"></div>
+            <div>报销日期(Date): <input type="date" id="reim_head_date" value="" style="width: 125px;" oninput="syncDates(this.value)"></div>
+        </div>
+        <table id="table_reimbursement">
+            <thead>
+                <tr>
+                    <th width="5%">序号<br>S/N</th>
+                    <th width="12%">发票日期<br>Date of invoice</th>
+                    <th width="8%">单据张数<br>Attachment No</th>
+                    <th width="22%">报销内容<br>Expense Items</th>
+                    <th width="11%">税前金额<br>Pre-tax Amount</th>
+                    <th width="9%">税费<br>Tax Amount</th>
+                    <th width="13%">含税金额<br>Amount(<select class="currency-select" id="reim_currency" onchange="refreshAllForms()">
+                        <option value="JD" selected>JD</option>
+                        <option value="USD">USD</option>
+                        <option value="AED">AED</option>
+                    </select>)</th>
+                    <th width="15%">成本核算对象<br>Cost Center</th>
+                    <th width="5%" class="no-print">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_reim"></tbody>
+            <tfoot>
+                <tr class="tfoot-row">
+                    <td colspan="2">TOTAL(单据总计)</td>
+                    <td id="reim_total_att">0</td>
+                    <td style="text-align: right; padding-right: 15px;" id="reim_total_label">金额合计(Total JD)</td>
+                    <td id="reim_total_preTax">0.000</td>
+                    <td id="reim_total_tax">0.000</td>
+                    <td id="reim_total_amt">0.000</td>
+                    <td></td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="add-row-container no-print">
+            <button class="add-row-btn" onclick="addBusinessRow('reim', ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'], true)">+ 新增一行</button>
+        </div>
+        <div class="signature-area" id="sig_reimbursement">
+            <div class="sig-row staggered-3">
+                <div class="sig-item">报销人：<br><span class="en">(Applicant)</span></div>
+                <div class="sig-item">部门经理：<br><span class="en">(Manager of Dept.)</span></div>
+                <div class="sig-item">成本预算控制：<br><span class="en">(Cost Control)</span></div>
+            </div>
+            <div class="sig-row">
+                <div class="sig-item">财务审核：<br><span class="en">(Financial Audit)</span></div>
+                <div class="sig-item">财务经理：<br><span class="en">(Financial Manager)</span></div>
+                <div class="sig-item">项目副经理：<br><span class="en">(Deputy Project Director)</span></div>
+                <div class="sig-item">项目经理：<br><span class="en">(Project Manager)</span></div>
+            </div>
+        </div>
+        <div class="boss-mark no-print">老板专属表格iiavatar</div>
+    </div>
+
+    <!-- ================= 2. 采购申请单 ================= -->
+    <div id="purchase" class="tab-content">
+        <div class="doc-title">
+            <input type="text" class="title-input" id="title_purc" value="CCSA JV" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h2" id="title_purc_h2" value="后勤、办公用品采购表" list="title_h2_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h3" id="title_purc_h3" value="Logistics and Office Supplies Procurement Order" list="title_h3_list" onfocus="this.select()" oninput="saveDataToLocal()">
+        </div>
+        <div class="header-info">
+            <div>申请单位/Dept.: <input type="text" id="purc_dept" value="约旦项目经理部" style="width: 150px;" oninput="saveDataToLocal()"></div>
+            <div>编号/SN. : <input type="text" id="purc_sn_head" value="" style="width: 100px;" oninput="saveDataToLocal()"></div>
+            <div>日期/Date: <input type="date" id="purc_head_date" value="" style="width: 125px;" oninput="syncDates(this.value)"></div>
+        </div>
+        <table id="table_purchase">
+            <thead>
+                <tr>
+                    <th width="6%">序号<br>Item</th>
+                    <th width="23%">物品名称<br>Item Name</th>
+                    <th width="23%">规格型号<br>Specificiation</th>
+                    <th width="8%">单位<br>Unit</th>
+                    <th width="8%">数量<br>Qty.</th>
+                    <th width="17%">用途<br>Purpose</th>
+                    <th width="10%">备注<br>Remark</th>
+                    <th width="5%" class="no-print">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_purc"></tbody>
+        </table>
+        <div class="add-row-container no-print">
+            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'], true)">+ 新增一行</button>
+        </div>
+        <div class="signature-area" id="sig_purchase">
+            <div class="sig-row">
+                <div class="sig-item">申请人：<br><span class="en">Prepared by:</span></div>
+                <div class="sig-item">成本经理：<br><span class="en">(Cost Manager)</span></div>
+                <div class="sig-item">项目副经理：<br><span class="en">(Deputy Project Manager)</span></div>
+                <div class="sig-item">项目经理：<br><span class="en">(Project Manager)</span></div>
+            </div>
+        </div>
+        <div class="boss-mark no-print">老板专属表格iiavatar</div>
+    </div>
+
+    <!-- ================= 3. 入库单 ================= -->
+    <div id="receipt" class="tab-content">
+        <div class="doc-title">
+            <input type="text" class="title-input" id="title_rect" value="CCSA JV" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h2" id="title_rect_h2" value="入 库 单" list="title_h2_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h3" id="title_rect_h3" value="Stock In" list="title_h3_list" onfocus="this.select()" oninput="saveDataToLocal()">
+        </div>
+        <div class="header-info">
+            <div>DATE: <input type="date" id="rect_head_date" value="" style="width: 125px;" oninput="syncDates(this.value)"></div>
+            <div></div> 
+        </div>
+        <table id="table_receipt">
+            <thead>
+                <tr>
+                    <th width="6%">序号<br>No.</th>
+                    <th width="20%">品名<br>Product Name</th>
+                    <th width="18%">规格<br>Specification</th>
+                    <th width="10%">类别<br>Category</th>
+                    <th width="8%">单位<br>Unit</th>
+                    <th width="8%">数量<br>quantity</th>
+                    <th width="12%">单价(JD)<br>Unit Price</th>
+                    <th width="13%">金额(<select class="currency-select" id="rect_currency" onchange="refreshAllForms()">
+                        <option value="JD" selected>JD</option>
+                        <option value="USD">USD</option>
+                        <option value="AED">AED</option>
+                    </select>)<br>Total Amount</th>
+                    <th width="5%" class="no-print">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_rect"></tbody>
+            <tfoot>
+                <tr class="tfoot-row">
+                    <td colspan="6" style="text-align: left;">备注<br><span style="font-weight: normal; font-size: 12px;">Remark</span></td>
+                    <td id="rect_total_label">TOTAL (JD)</td>
+                    <td id="rect_total_amt">0.000</td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="add-row-container no-print">
+            <button class="add-row-btn" onclick="addBusinessRow('rect', ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'], true)">+ 新增一行</button>
+        </div>
+        <div class="signature-area" id="sig_receipt">
+            <div class="sig-row">
+                <div class="sig-item">交货人：<br><span class="en">Deliverer:</span></div>
+                <div class="sig-item">核对人：<br><span class="en">Stockkeeper:</span></div>
+                <div class="sig-item">经理：<br><span class="en">Manager:</span></div>
+            </div>
+        </div>
+        <div class="boss-mark no-print">老板专属表格iiavatar</div>
+    </div>
+
+    <!-- ================= 4. 出库单 ================= -->
+    <div id="issue" class="tab-content">
+        <div class="doc-title">
+            <input type="text" class="title-input" id="title_issu" value="CCSA JV" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h2" id="title_issu_h2" value="出 库 单" list="title_h2_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h3" id="title_issu_h3" value="Stock Out" list="title_h3_list" onfocus="this.select()" oninput="saveDataToLocal()">
+        </div>
+        <div class="header-info">
+            <div>DATE: <input type="date" id="issu_head_date" value="" style="width: 125px;" oninput="syncDates(this.value)"></div>
+            <div></div>
+        </div>
+        <table id="table_issue">
+            <thead>
+                <tr>
+                    <th width="6%">序号<br>No.</th>
+                    <th width="20%">品名<br>Product Name</th>
+                    <th width="18%">规格<br>Specification</th>
+                    <th width="10%">类别<br>Category</th>
+                    <th width="8%">单位<br>Unit</th>
+                    <th width="8%">数量<br>quantity</th>
+                    <th width="12%">单价(JD)<br>Unit Price</th>
+                    <th width="13%">金额(<select class="currency-select" id="issu_currency" onchange="refreshAllForms()">
+                        <option value="JD" selected>JD</option>
+                        <option value="USD">USD</option>
+                        <option value="AED">AED</option>
+                    </select>)<br>Total Amount</th>
+                    <th width="5%" class="no-print">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_issu"></tbody>
+            <tfoot>
+                <tr class="tfoot-row">
+                    <td colspan="6" style="text-align: left;">备注<br><span style="font-weight: normal; font-size: 12px;">Remark</span></td>
+                    <td id="issu_total_label">TOTAL (JD)</td>
+                    <td id="issu_total_amt">0.000</td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="add-row-container no-print">
+            <button class="add-row-btn" onclick="addBusinessRow('issu', ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'], true)">+ 新增一行</button>
+        </div>
+        <div class="signature-area" id="sig_issue">
+            <div class="sig-row">
+                <div class="sig-item">申请人：<br><span class="en">Buyer: </span></div>
+                <div class="sig-item">核对人：<br><span class="en">Stockkeeper:</span></div>
+                <div class="sig-item">经理：<br><span class="en">Purchase Manager:</span></div>
+            </div>
+        </div>
+        <div class="boss-mark no-print">老板专属表格iiavatar</div>
+    </div>
+
+    <!-- ================= 5. AI识别报销单 ================= -->
+    <div id="ai_reimbursement" class="tab-content">
+        <div class="doc-title">
+            <input type="text" class="title-input" id="title_ai_reim" value="CCSA JV" list="title_main_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h2" id="title_ai_reim_h2" value="费用报销单 (AI 智能版)" list="title_h2_list" onfocus="this.select()" oninput="saveDataToLocal()">
+            <input type="text" class="title-h3" id="title_ai_reim_h3" value="(Expense Reimbursement Request - Smart Entry)" list="title_h3_list" onfocus="this.select()" oninput="saveDataToLocal()">
+        </div>
+        <div class="header-info">
+            <div>报销单位: <input type="text" id="ai_reim_dept" value="Amman Office" style="width: 150px;" oninput="saveDataToLocal()"></div>
+            <div>报销日期(Date): <input type="date" id="ai_reim_head_date" value="" style="width: 125px;" oninput="syncDates(this.value)"></div>
+        </div>
+        <table id="table_ai_reimbursement">
+            <thead>
+                <tr>
+                    <th width="5%">序号<br>S/N</th>
+                    <th width="12%">发票日期<br>Date of invoice</th>
+                    <th width="8%">单据张数<br>Attachment No</th>
+                    <th width="22%">报销内容<br>Expense Items</th>
+                    <th width="11%">税前金额<br>Pre-tax Amount</th>
+                    <th width="9%">税费<br>Tax Amount</th>
+                    <th width="13%">含税金额<br>Amount(<select class="currency-select" id="ai_reim_currency" onchange="calculateTotal('ai_reim')">
+                        <option value="JD" selected>JD</option>
+                        <option value="USD">USD</option>
+                        <option value="AED">AED</option>
+                    </select>)</th>
+                    <th width="15%">成本核算对象<br>Cost Center</th>
+                    <th width="5%" class="no-print">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_ai_reim"></tbody>
+            <tfoot>
+                <tr class="tfoot-row">
+                    <td colspan="2">TOTAL(单据总计)</td>
+                    <td id="ai_reim_total_att">0</td>
+                    <td style="text-align: right; padding-right: 15px;" id="ai_reim_total_label">金额合计(Total JD)</td>
+                    <td id="ai_reim_total_preTax">0.000</td>
+                    <td id="ai_reim_total_tax">0.000</td>
+                    <td id="ai_reim_total_amt">0.000</td>
+                    <td></td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="add-row-container no-print">
+            <button class="add-row-btn" onclick="addAiBusinessRow('ai_reim', ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'], true)">+ 新增空白行</button>
+        </div>
+        <div class="signature-area" id="sig_ai_reimbursement">
+            <div class="sig-row staggered-3">
+                <div class="sig-item">报销人：<br><span class="en">(Applicant)</span></div>
+                <div class="sig-item">部门经理：<br><span class="en">(Manager of Dept.)</span></div>
+                <div class="sig-item">成本预算控制：<br><span class="en">(Cost Control)</span></div>
+            </div>
+            <div class="sig-row">
+                <div class="sig-item">财务审核：<br><span class="en">(Financial Audit)</span></div>
+                <div class="sig-item">财务经理：<br><span class="en">(Financial Manager)</span></div>
+                <div class="sig-item">项目副经理：<br><span class="en">(Deputy Project Director)</span></div>
+                <div class="sig-item">项目经理：<br><span class="en">(Project Manager)</span></div>
+            </div>
+        </div>
+
+        <div class="bottom-ai-config no-print">
+            <h4>⚙️ 激活真实 AI 视觉识别引擎</h4>
+            <div class="api-key-box-large">
+                <input type="password" id="gemini_api_key" value="" placeholder="在此粘贴您的 Gemini API Key">
+                <button class="api-save-btn" onclick="saveApiKey()">✅ 提交保存密钥</button>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-link-btn">免费获取密钥 👉</a>
+            </div>
+            <span style="font-size: 12px; color: #6c757d;">配置完成后，请点击右上角按钮上传图片，系统将交由 Python 后台智能解析。</span>
+        </div>
+        <div class="boss-mark no-print">老板专属表格iiavatar</div>
+    </div>
+
+</div>
+
+<!-- 智能解析弹窗 -->
+<div id="smartPasteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:25px; border-radius:8px; width:550px; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#004080; display:flex; justify-content:space-between; align-items:center;">
+            <span>🤖 AI智能识票</span>
+            <button onclick="closeSmartPasteModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#999;">&times;</button>
+        </h3>
+        
+        <div style="background:#f8f9fa; border:1px dashed #6f42c1; padding:15px; border-radius:6px; margin-bottom:20px; text-align:center;">
+            <p style="margin-top:0; font-size:14px; font-weight:bold; color:#6f42c1;">方案一：原图一键直传 (需配好底部 API 密钥)</p>
+            <input type="file" id="modalFile" style="display:none" accept=".jpg, .jpeg, .png, .pdf, application/pdf, image/*" onchange="executeImageAI(event)">
+            <button id="modalUploadBtn" onclick="document.getElementById('modalFile').click()" style="padding:8px 20px; background:#6f42c1; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:14px; transition:0.2s; box-shadow:0 2px 4px rgba(111,66,193,0.2);">
+                📁 点击上传发票原图或 PDF
+            </button>
+            <p id="modalUploadStatus" style="font-size:12px; color:#666; margin-bottom:0; margin-top:8px;">图片将安全发送至您的本地 Python 引擎处理。</p>
+        </div>
+
+        <div style="text-align:center; color:#adb5bd; font-size:12px; margin-bottom:15px; position:relative;">
+            <hr style="border-top:1px dashed #dee2e6; border-bottom:none; margin:0; position:absolute; width:100%; top:50%; z-index:1;">
+            <span style="background:white; padding:0 10px; position:relative; z-index:2;">— 或使用物理外挂 —</span>
+        </div>
+
+        <div style="margin-bottom:15px;">
+            <p style="margin-top:0; font-size:14px; font-weight:bold; color:#333;">方案二：文本提取粘贴 (离线秒级/无 Key 可用)</p>
+            <p style="font-size:12px; color:#666; margin-top:5px;">💡 提示：在手机相册长按图片提取文本，或使用微信/QQ截图的文字识别功能，将文本粘贴至此：</p>
+            <textarea id="smartPasteText" rows="4" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ced4da; border-radius:4px; font-family:inherit; resize:none;" placeholder="例如：Arab Bank 2026-05-09 3.450 JOD Pharmacy..."></textarea>
+        </div>
+
+        <div style="text-align:right; display:flex; gap:10px; justify-content:flex-end;">
+            <button onclick="closeSmartPasteModal()" style="padding:6px 15px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer; color:#333;">取消</button>
+            <button onclick="executeSmartPaste()" style="padding:6px 15px; background:#004080; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,64,128,0.2);">解析并填入表格</button>
+        </div>
+    </div>
+</div>
+<!-- 基础表格逻辑 -->
+<script>
+    const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'unit', 'priceJD', 'qty', 'preTaxUSD', 'taxUSD', 'amountUSD', 'purpose', 'costCenter', 'remark'];
+    const aiReimFields = ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'];
+    let rowCounters = { index: 0, reim: 0, ai_reim: 0, purc: 0, rect: 0, issu: 0 };
+    let isInitializing = true; 
+    let currentActiveTab = 'index_view';
+
+    function importJsonData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data && data.indexRows) {
+                    sessionStorage.setItem('date_initialized', 'true');
+                    localStorage.setItem('ccecc_jv_data_pro', JSON.stringify(data));
+                    alert('✅ 备份数据加载成功！点击确定为您刷新页面。');
+                    location.reload(); 
+                } else {
+                    alert('❌ 文件格式好像不对，请确认是下载的备份文件。');
+                }
+            } catch (err) {
+                alert('❌ 导入失败，读取文件出错了：' + err.message);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; 
+    }
+function forceSaveData() {
+        saveDataToLocal(); 
+        
+        const dataStr = localStorage.getItem('ccecc_jv_data_pro');
+        if (dataStr) {
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `CCSA单据本地安全备份_${getTodayDateString()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        const toast = document.getElementById('manual_save_toast');
+        if (toast) {
+            toast.style.opacity = 1;
+            setTimeout(() => { toast.style.opacity = 0; }, 3000);
+        }
+    }
+
+    function syncDates(newDate) {
+        const dateIds = ['reim_head_date', 'purc_head_date', 'rect_head_date', 'issu_head_date', 'ai_reim_head_date'];
+        dateIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.value !== newDate) {
+                el.value = newDate;
+            }
+        });
+        saveDataToLocal();
+    }
+
+    function autoResize(el) {
+        if(el.tagName === 'TEXTAREA') {
+            let currentHeight = el.offsetHeight;
+            el.style.height = 'auto';
+            let newHeight = Math.max(el.scrollHeight, currentHeight, 28);
+            el.style.height = newHeight + 'px';
+        }
+    }
+
+    window.addEventListener('beforeprint', function() {
+        document.querySelectorAll('.flex-textarea').forEach(el => {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        });
+    });
+
+    function getTodayDateString() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function initResizableColumns() {
+        const tables = document.querySelectorAll('table');
+        tables.forEach(table => {
+            const cols = table.querySelectorAll('thead th');
+            cols.forEach(col => {
+                if (col.classList.contains('no-print') || col.querySelector('.resizer')) return; 
+                
+                const resizer = document.createElement('div');
+                resizer.classList.add('resizer');
+                col.appendChild(resizer);
+                
+                let x = 0;
+                let w = 0;
+                
+                const mouseDownHandler = function (e) {
+                    e.preventDefault(); 
+                    x = e.clientX;
+                    const styles = window.getComputedStyle(col);
+                    w = parseInt(styles.width, 10);
+                    
+                    document.addEventListener('mousemove', mouseMoveHandler);
+                    document.addEventListener('mouseup', mouseUpHandler);
+                    resizer.classList.add('resizing');
+                };
+                
+                const mouseMoveHandler = function (e) {
+                    const dx = e.clientX - x;
+                    col.style.width = `${Math.max(30, w + dx)}px`; 
+                };
+                
+                const mouseUpHandler = function () {
+                    resizer.classList.remove('resizing');
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                };
+                
+                resizer.addEventListener('mousedown', mouseDownHandler);
+            });
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        let target = e.target;
+        if (!target.classList.contains('input-cell') && !target.classList.contains('readonly-cell') && !target.classList.contains('flex-textarea')) return;
+
+        let td = target.closest('td');
+        let tr = target.closest('tr');
+        if (!td || !tr) return;
+        let cellIndex = Array.from(tr.children).indexOf(td);
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let prevTr = tr.previousElementSibling;
+            if (prevTr) {
+                let nextInput = prevTr.children[cellIndex].querySelector('input, textarea');
+                if (nextInput) nextInput.focus();
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let nextTr = tr.nextElementSibling;
+            if (nextTr) {
+                let nextInput = nextTr.children[cellIndex].querySelector('input, textarea');
+                if (nextInput) nextInput.focus();
+            }
+        } else if (e.key === 'ArrowLeft' && target.selectionStart === 0) {
+            let prevTd = td.previousElementSibling;
+            while (prevTd) {
+                let nextInput = prevTd.querySelector('input, textarea');
+                if (nextInput && nextInput.type !== 'hidden') {
+                    e.preventDefault();
+                    nextInput.focus();
+                    break;
+                }
+                prevTd = prevTd.previousElementSibling;
+            }
+        } else if (e.key === 'ArrowRight' && target.selectionEnd === target.value.length) {
+            let nextTd = td.nextElementSibling;
+            while (nextTd) {
+                let nextInput = nextTd.querySelector('input, textarea');
+                if (nextInput && nextInput.type !== 'hidden') {
+                    e.preventDefault();
+                    nextInput.focus();
+                    break;
+                }
+                nextTd = nextTd.nextElementSibling;
+            }
+        }
+    });
+
+    document.getElementById('tbody_index').addEventListener('paste', function(e) {
+        let target = e.target;
+        if (!target.classList.contains('input-cell')) return;
+        
+        e.preventDefault();
+        let pasteData = (e.clipboardData || window.clipboardData).getData('text');
+        if(!pasteData) return;
+
+        let rows = pasteData.split(/\r\n|\n|\r/);
+        let startTd = target.closest('td');
+        let startTr = target.closest('tr');
+        let tbody = startTr.closest('tbody');
+        
+        let startColIndex = Array.from(startTr.children).indexOf(startTd);
+        let currentTr = startTr;
+
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].trim() === '' && i === rows.length -1) continue;
+            
+            if (!currentTr) {
+                addIndexRow(true);
+                currentTr = tbody.lastElementChild;
+            }
+
+            let cells = rows[i].split('\t');
+            for (let j = 0; j < cells.length; j++) {
+                let targetColIndex = startColIndex + j;
+                if (targetColIndex < currentTr.children.length) {
+                    let targetTd = currentTr.children[targetColIndex];
+                    let inputEl = targetTd.querySelector('input, textarea');
+                    if (inputEl && !inputEl.readOnly) {
+                        inputEl.value = cells[j].trim();
+                    }
+                }
+            }
+            currentTr = currentTr.nextElementSibling;
+        }
+        recalculateAll(); 
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        ['reim', 'purc', 'rect', 'issu'].forEach(prefix => {
+            let tbody = document.getElementById(`tbody_${prefix}`);
+            if (tbody) {
+                tbody.addEventListener('paste', function(e) {
+                    let target = e.target;
+                    if (!target.id.includes('_sn_')) return; 
+
+                    e.preventDefault();
+                    let pasteData = (e.clipboardData || window.clipboardData).getData('text');
+                    if(!pasteData) return;
+
+                    let rows = pasteData.split(/\r\n|\n|\r/);
+                    let currentTr = target.closest('tr');
+
+                    let fieldsMap = {
+                        'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
+                        'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+                        'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
+                        'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
+                    };
+
+                    for (let i = 0; i < rows.length; i++) {
+                        let snVal = rows[i].trim();
+                        if (snVal === '' && i === rows.length -1) continue;
+
+                        if (!currentTr) {
+                            addBusinessRow(prefix, fieldsMap[prefix], false);
+                            currentTr = tbody.lastElementChild;
+                        }
+
+                        let snInput = currentTr.querySelector(`[id^="${prefix}_sn_"]`);
+                        if (snInput) {
+                            snInput.value = snVal;
+                            let rowId = snInput.id.split('_').pop();
+                            autoFill(rowId, prefix, fieldsMap[prefix]);
+                        }
+                        currentTr = currentTr.nextElementSibling;
+                    }
+                    saveDataToLocal();
+                });
+            }
+        });
+    });
+
+    function handleEnterSn(e, rowId, prefix, fields) {
+        let currentInput = document.getElementById(`${prefix}_sn_${rowId}`);
+        let currentTr = currentInput.closest('tr');
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            if (!currentInput.value.trim()) {
+                let prevTr = currentTr.previousElementSibling;
+                if (prevTr) {
+                    let prevInput = prevTr.querySelector(`[id^="${prefix}_sn_"]`);
+                    if (prevInput && prevInput.value.trim() !== '' && !isNaN(prevInput.value)) {
+                        currentInput.value = parseInt(prevInput.value) + 1;
+                        if (prefix === 'idx') recalculateAll(); 
+                        else if (prefix !== 'ai_reim') autoFill(rowId, prefix, fields); 
+                    }
+                }
+            }
+            
+            let currentVal = currentInput.value.trim();
+            
+            let nextTr = currentTr.nextElementSibling;
+            if (!nextTr) {
+                if (prefix === 'idx') addIndexRow(false);
+                else if (prefix === 'ai_reim') addAiBusinessRow(prefix, fields, false);
+                else addBusinessRow(prefix, fields, false);
+                nextTr = currentTr.nextElementSibling;
+            }
+            
+            if (nextTr) {
+                let nextInput = nextTr.querySelector(`[id^="${prefix}_sn_"]`);
+                if (nextInput) {
+                    if (currentVal !== '' && !isNaN(currentVal)) {
+                        nextInput.value = parseInt(currentVal) + 1;
+                        let nextRowId = nextInput.id.split('_').pop();
+                        
+                        if (prefix === 'idx') recalculateAll();
+                        else if (prefix !== 'ai_reim') autoFill(nextRowId, prefix, fields);
+                    }
+                    nextInput.focus();
+                    nextInput.select();
+                }
+            }
+            if (prefix === 'ai_reim') saveDataToLocal();
+        }
+        else if (e.key === 'Backspace') {
+            if (currentInput.value === '') {
+                e.preventDefault();
+                let prevTr = currentTr.previousElementSibling;
+                if (prevTr) {
+                    let prevInput = prevTr.querySelector(`[id^="${prefix}_sn_"]`);
+                    if (prevInput) {
+                        prevInput.focus();
+                        prevInput.select();
+                    }
+                }
+            }
+        }
+    }
+
+    function addIndexRow(isManualClick = false) {
+        rowCounters.index++;
+        const i = rowCounters.index;
+        const tbody = document.getElementById('tbody_index');
+        let tr = document.createElement('tr');
+        
+        indexFields.forEach(field => {
+            let td = document.createElement('td');
+            let placeholder = field === 'sn' ? i : '';
+            if (field === 'sn') {
+                td.innerHTML = `<input type="text" class="input-cell" id="idx_${field}_${i}" value="${isManualClick ? '' : i}" placeholder="${placeholder}" oninput="recalculateAll()" onkeydown="handleEnterSn(event, ${i}, 'idx', [])">`;
+            } else {
+                td.innerHTML = `<input type="text" class="input-cell" id="idx_${field}_${i}" value="" placeholder="${placeholder}" oninput="recalculateAll()">`;
+            }
+            tr.appendChild(td);
+        });
+
+        let tdAction = document.createElement('td');
+        tdAction.className = 'no-print';
+        tdAction.innerHTML = `<button type="button" class="action-btn del" title="删除此行" onclick="removeIndexRow(this)">✖</button>`;
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+
+        if (isManualClick) {
+            let autoSn = '';
+            let prevTr = tr.previousElementSibling;
+            if (prevTr) {
+                let prevInput = prevTr.querySelector(`[id^="idx_sn_"]`);
+                if (prevInput && prevInput.value.trim() !== '' && !isNaN(prevInput.value)) autoSn = parseInt(prevInput.value) + 1;
+            } else { autoSn = 1; }
+            document.getElementById(`idx_sn_${i}`).value = autoSn;
+            recalculateAll();
+        }
+        
+        if (!isInitializing) {
+            syncBusinessRows();
+            refreshAllForms(); 
+            saveDataToLocal();
+        }
+    }
+
+    function syncBusinessRows() {
+        const targetCount = rowCounters.index;
+        const fieldsMap = {
+            'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+            'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
+            'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
+        };
+        
+        ['reim', 'purc', 'rect', 'issu'].forEach(prefix => {
+            while (rowCounters[prefix] < targetCount) {
+                addBusinessRow(prefix, fieldsMap[prefix], false);
+                let newIdx = rowCounters[prefix];
+                let snInput = document.getElementById(`${prefix}_sn_${newIdx}`);
+                if (snInput && !snInput.value) {
+                    snInput.value = newIdx;
+                }
+            }
+        });
+
+        while (rowCounters['ai_reim'] < targetCount) {
+            addAiBusinessRow('ai_reim', aiReimFields, false);
+            let newIdx = rowCounters['ai_reim'];
+            let snInput = document.getElementById(`ai_reim_sn_${newIdx}`);
+            if (snInput && !snInput.value) {
+                snInput.value = newIdx;
+            }
+        }
+    }
+
+    function removeIndexRow(btnElement) {
+        btnElement.closest('tr').remove();
+        resequenceIndexTable();
+        recalculateAll(); 
+    }
+
+    function resequenceIndexTable() {
+        let tbody = document.getElementById('tbody_index');
+        if (!tbody) return;
+        let rows = tbody.querySelectorAll('tr');
+        let currentSn = 1;
+        rows.forEach(row => {
+            let snInput = row.querySelector('[id^="idx_sn_"]');
+            if (snInput) {
+                snInput.value = currentSn;
+                snInput.placeholder = currentSn;
+                currentSn++;
+            }
+        });
+        if(!isInitializing) saveDataToLocal();
+    }
+
+    function addBusinessRow(prefix, fields, isManualClick = false) {
+        rowCounters[prefix]++;
+        const i = rowCounters[prefix];
+        const tbody = document.getElementById(`tbody_${prefix}`);
+        let tr = document.createElement('tr');
+        
+        let tdSn = document.createElement('td');
+        if (prefix === 'purc') {
+            tdSn.innerHTML = `<textarea class="input-cell flex-textarea" id="${prefix}_sn_${i}" oninput="autoFill(${i}, '${prefix}', ['${fields.join("','")}']); autoResize(this)" onkeydown="handleEnterSn(event, ${i}, '${prefix}', ['${fields.join("','")}'])" placeholder="录入" rows="1"></textarea>`;
+        } else {
+            tdSn.innerHTML = `<input type="text" class="input-cell" id="${prefix}_sn_${i}" oninput="autoFill(${i}, '${prefix}', ['${fields.join("','")}'])" onkeydown="handleEnterSn(event, ${i}, '${prefix}', ['${fields.join("','")}'])" placeholder="录入">`;
+        }
+        tr.appendChild(tdSn);
+
+        fields.forEach(field => {
+            let td = document.createElement('td');
+            let fontWeight = (field === 'amountUSD' || field === 'priceJD') ? 'font-weight:bold;' : '';
+            if (prefix === 'purc') {
+                td.innerHTML = `<textarea class="readonly-cell flex-textarea" id="${prefix}_${field}_${i}" style="${fontWeight}" readonly rows="1"></textarea>`;
+            } else {
+                td.innerHTML = `<input type="text" class="readonly-cell" id="${prefix}_${field}_${i}" style="${fontWeight}" readonly>`;
+            }
+            tr.appendChild(td);
+        });
+
+        let tdAction = document.createElement('td');
+        tdAction.className = 'no-print';
+        tdAction.innerHTML = `<button type="button" class="action-btn del" title="删除此行" onclick="removeRow(this, '${prefix}')">✖</button>`;
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+
+        if (isManualClick) {
+            let autoSn = '';
+            let prevTr = tr.previousElementSibling;
+            if (prevTr) {
+                let prevInput = prevTr.querySelector(`[id^="${prefix}_sn_"]`);
+                if (prevInput && prevInput.value.trim() !== '' && !isNaN(prevInput.value)) autoSn = parseInt(prevInput.value) + 1;
+            } else { autoSn = 1; }
+            document.getElementById(`${prefix}_sn_${i}`).value = autoSn;
+            autoFill(i, prefix, fields);
+        }
+        if(!isInitializing) saveDataToLocal();
+    }
+
+    function addAiBusinessRow(prefix, fields, isManualClick = false) {
+        rowCounters[prefix]++;
+        const i = rowCounters[prefix];
+        const tbody = document.getElementById(`tbody_${prefix}`);
+        let tr = document.createElement('tr');
+        
+        let tdSn = document.createElement('td');
+        tdSn.innerHTML = `<input type="text" class="input-cell" id="${prefix}_sn_${i}" oninput="saveDataToLocal()" onkeydown="handleEnterSn(event, ${i}, '${prefix}', ['${fields.join("','")}'])" placeholder="录入">`;
+        tr.appendChild(tdSn);
+
+        fields.forEach(field => {
+            let td = document.createElement('td');
+            let fontWeight = (field === 'amountUSD') ? 'font-weight:bold;' : '';
+            td.innerHTML = `<input type="text" class="input-cell" id="${prefix}_${field}_${i}" style="${fontWeight}" oninput="saveDataToLocal(); if(this.id.includes('USD')) calculateTotal('${prefix}')">`;
+            tr.appendChild(td);
+        });
+
+        let tdAction = document.createElement('td');
+        tdAction.className = 'no-print';
+        tdAction.innerHTML = `<button type="button" class="action-btn del" title="删除此行" onclick="removeRow(this, '${prefix}')">✖</button>`;
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+
+        if (isManualClick) {
+            let autoSn = '';
+            let prevTr = tr.previousElementSibling;
+            if (prevTr) {
+                let prevInput = prevTr.querySelector(`[id^="${prefix}_sn_"]`);
+                if (prevInput && prevInput.value.trim() !== '' && !isNaN(prevInput.value)) autoSn = parseInt(prevInput.value) + 1;
+            } else { autoSn = 1; }
+            document.getElementById(`${prefix}_sn_${i}`).value = autoSn;
+        }
+        if(!isInitializing) saveDataToLocal();
+    }
+
+    function resequenceAiTable() {
+        let tbody = document.getElementById('tbody_ai_reim');
+        if (!tbody) return;
+        let rows = tbody.querySelectorAll('tr');
+        let currentSn = 1;
+        rows.forEach(row => {
+            let snInput = row.querySelector('[id^="ai_reim_sn_"]');
+            if (snInput) {
+                snInput.value = currentSn++;
+            }
+        });
+    }
+
+    function removeRow(btnElement, prefix) {
+        btnElement.closest('tr').remove();
+        calculateTotal(prefix);
+        
+        if (prefix === 'ai_reim') {
+            resequenceAiTable(); 
+            if(!isInitializing) saveDataToLocal();
+        }
+    }
+
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        if(element) element.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        currentActiveTab = tabId;
+
+        const aiWrapper = document.getElementById('ai_btn_wrapper');
+        if (tabId === 'ai_reimbursement') {
+            aiWrapper.style.display = 'inline-flex';
+        } else {
+            aiWrapper.style.display = 'none';
+        }
+
+        // 仅在【采购申请单】页面显示发起审批和刷新签字按钮
+        const approvalBtns = document.querySelectorAll('.lan-approval-btn');
+        if (tabId === 'purchase') {
+            approvalBtns.forEach(btn => btn.style.display = 'inline-block');
+        } else {
+            approvalBtns.forEach(btn => btn.style.display = 'none');
+        }
+    }
+
+    function getIndexDataBySN(snValue) {
+        if (!snValue) return null;
+        for (let i = 1; i <= rowCounters.index; i++) {
+            const snInput = document.getElementById(`idx_sn_${i}`);
+            if (snInput) {
+                let actualSn = snInput.value.trim() || snInput.placeholder.trim();
+                if (actualSn === snValue.trim()) {
+                    let record = {};
+                    indexFields.forEach(field => {
+                        let el = document.getElementById(`idx_${field}_${i}`);
+                        if(el) record[field] = el.value.trim() || (field === 'sn' ? el.placeholder : '');
+                    });
+                    return record;
+                }
+            }
+        }
+        return null;
+    }
+
+    function recalculateAll() {
+        const rate = parseFloat(document.getElementById('global_rate').value) || 0.708;
+        const idxCurrency = document.getElementById('idx_currency').value;
+        
+        for (let i = 1; i <= rowCounters.index; i++) {
+            const priceEl = document.getElementById(`idx_priceJD_${i}`);
+            const qtyEl = document.getElementById(`idx_qty_${i}`);
+            const amountEl = document.getElementById(`idx_amountUSD_${i}`);
+            
+            if (priceEl && qtyEl && amountEl) {
+                const price = parseFloat(priceEl.value);
+                const qty = parseFloat(qtyEl.value);
+                if (!isNaN(price) && !isNaN(qty)) {
+                    const totalBase = price * qty;
+                    amountEl.value = (idxCurrency === 'USD' ? (totalBase / rate) : totalBase).toFixed(3);
+                }
+            }
+        }
+        refreshAllForms();
+    }
+
+    function autoFill(rowId, prefix, fields) {
+        const snValue = document.getElementById(prefix + '_sn_' + rowId).value;
+        const record = getIndexDataBySN(snValue);
+        const rate = parseFloat(document.getElementById('global_rate').value) || 0.708;
+        const currencyEl = document.getElementById(prefix + '_currency');
+        const targetCurrency = currencyEl ? currencyEl.value : 'JD';
+
+        fields.forEach(field => {
+            const el = document.getElementById(prefix + '_' + field + '_' + rowId);
+            if (el) {
+                if (field === 'amountUSD') {
+                    let finalAmount = '';
+                    if (record && record['amountUSD'] && !isNaN(parseFloat(record['amountUSD']))) {
+                        const rawAmount = parseFloat(record['amountUSD']);
+                        const idxCurrency = document.getElementById('idx_currency').value;
+                        let baseJD = (idxCurrency === 'USD') ? (rawAmount * rate) : rawAmount;
+                        finalAmount = (targetCurrency === 'USD' ? (baseJD / rate) : baseJD).toFixed(3);
+                    } else if (record && !isNaN(parseFloat(record['priceJD'])) && !isNaN(parseFloat(record['qty']))) {
+                        const price = parseFloat(record['priceJD']);
+                        const qty = parseFloat(record['qty']);
+                        const totalBase = price * qty;
+                        finalAmount = (targetCurrency === 'USD' ? (totalBase / rate) : totalBase).toFixed(3);
+                    }
+                    el.value = finalAmount;
+                } else {
+                    el.value = (record && record[field]) ? record[field] : '';
+                }
+                
+                if(el.tagName === 'TEXTAREA') {
+                    autoResize(el);
+                }
+            }
+        });
+        calculateTotal(prefix);
+    }
+
+    function refreshAllForms() {
+        const prefixes = ['reim', 'purc', 'rect', 'issu'];
+        const fieldMaps = {
+            'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+            'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
+            'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
+        };
+
+        prefixes.forEach(prefix => {
+            for (let i = 1; i <= rowCounters[prefix]; i++) {
+                if (document.getElementById(`${prefix}_sn_${i}`)) {
+                    autoFill(i, prefix, fieldMaps[prefix]);
+                }
+            }
+        });
+        
+        calculateTotal('ai_reim');
+        if(!isInitializing) saveDataToLocal(); 
+    }
+
+    function calculateTotal(prefix) {
+        let totalAmt = 0;
+        let totalPreTax = 0;
+        let totalTax = 0;
+        let totalAtt = 0;
+        
+        for (let i = 1; i <= rowCounters[prefix]; i++) {
+            let currentAmt = 0, currentPreTax = 0, currentTax = 0; 
+            
+            const amtEl = document.getElementById(`${prefix}_amountUSD_${i}`);
+            if (amtEl && amtEl.value) {
+                const val = parseFloat(amtEl.value);
+                if (!isNaN(val)) {
+                    currentAmt = Math.round(val * 1000);
+                    totalAmt += currentAmt;
+                }
+            }
+
+            if (prefix === 'reim' || prefix === 'ai_reim') {
+                const preTaxEl = document.getElementById(`${prefix}_preTaxUSD_${i}`);
+                if (preTaxEl && preTaxEl.value) {
+                    const val = parseFloat(preTaxEl.value);
+                    if (!isNaN(val)) {
+                        currentPreTax = Math.round(val * 1000);
+                        totalPreTax += currentPreTax;
+                    }
+                }
+
+                const taxEl = document.getElementById(`${prefix}_taxUSD_${i}`);
+                if (taxEl && taxEl.value) {
+                    const val = parseFloat(taxEl.value);
+                    if (!isNaN(val)) {
+                        currentTax = Math.round(val * 1000);
+                        totalTax += currentTax;
+                    }
+                }
+
+                const attEl = document.getElementById(`${prefix}_attachment_${i}`);
+                if (attEl && attEl.value) {
+                    const attVal = parseInt(attEl.value);
+                    if (!isNaN(attVal)) totalAtt += attVal;
+                }
+                
+                if (amtEl) {
+                    if (currentPreTax + currentTax !== currentAmt) {
+                        amtEl.style.color = '#dc3545'; 
+                        amtEl.style.backgroundColor = '#ffeeba'; 
+                        amtEl.title = '错误：该行的 税前金额 + 税费 ≠ 含税金额';
+                    } else {
+                        amtEl.style.color = '';
+                        amtEl.style.backgroundColor = '';
+                        amtEl.title = '';
+                    }
+                }
+            }
+        }
+
+        totalAmt = totalAmt / 1000;
+        totalPreTax = totalPreTax / 1000;
+        totalTax = totalTax / 1000;
+
+        if (prefix === 'reim' || prefix === 'ai_reim') {
+            const sumPreTaxEl = document.getElementById(prefix + '_total_preTax');
+            if (sumPreTaxEl) sumPreTaxEl.innerText = totalPreTax > 0 ? totalPreTax.toFixed(3) : '0.000';
+
+            const sumTaxEl = document.getElementById(prefix + '_total_tax');
+            if (sumTaxEl) sumTaxEl.innerText = totalTax > 0 ? totalTax.toFixed(3) : '0.000';
+
+            const sumAttEl = document.getElementById(prefix + '_total_att');
+            if (sumAttEl) sumAttEl.innerText = totalAtt > 0 ? totalAtt : '0';
+            
+            const expectedTotalAmt = totalPreTax + totalTax;
+            const sumAmtEl = document.getElementById(prefix + '_total_amt');
+            
+            if (sumAmtEl) {
+                sumAmtEl.innerText = totalAmt > 0 ? totalAmt.toFixed(3) : '0.000';
+                
+                if (Math.abs(totalAmt - expectedTotalAmt) > 0.001) {
+                    sumAmtEl.style.color = '#dc3545';
+                    sumAmtEl.style.fontWeight = '900';
+                    sumAmtEl.title = '警告：排查上方明细，存在【税前+税费≠总额】的行！';
+                } else {
+                    sumAmtEl.style.color = '';
+                    sumAmtEl.style.fontWeight = 'bold';
+                    sumAmtEl.title = '';
+                }
+            }
+
+            const currencyEl = document.getElementById(prefix + '_currency');
+            const targetCurrency = currencyEl ? currencyEl.value : 'JD';
+            document.getElementById(prefix + '_total_label').innerText = '金额合计(Total ' + targetCurrency + ')';
+        } else {
+            const sumAmtEl = document.getElementById(prefix + '_total_amt');
+            if (sumAmtEl) {
+                sumAmtEl.innerText = totalAmt > 0 ? totalAmt.toFixed(3) : '0.000';
+                sumAmtEl.style.color = '';
+                sumAmtEl.title = '';
+            }
+        }
+
+        if (prefix === 'purc') {
+            const currencyEl = document.getElementById(prefix + '_currency');
+            const labelEl = document.getElementById('purc_total_label');
+            if (currencyEl && labelEl) {
+                labelEl.innerText = '合计 Total (' + currencyEl.value + '):';
+            }
+        }
+
+        if (prefix === 'rect' || prefix === 'issu') {
+            const currencyEl = document.getElementById(prefix + '_currency');
+            const labelEl = document.getElementById(prefix + '_total_label');
+            if (currencyEl && labelEl) {
+                labelEl.innerText = 'TOTAL (' + currencyEl.value + ')';
+            }
+        }
+        
+        if(!isInitializing) saveDataToLocal();
+    }
+
+    let saveTimeout;
+    function saveDataToLocal() {
+        if(isInitializing) return; 
+        
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            const data = {
+                rate: document.getElementById('global_rate').value,
+                geminiKey: document.getElementById('gemini_api_key') ? document.getElementById('gemini_api_key').value : '',
+                currencies: {
+                    idx: document.getElementById('idx_currency').value,
+                    reim: document.getElementById('reim_currency').value,
+                    ai_reim: document.getElementById('ai_reim_currency').value,
+                    purc: document.getElementById('purc_currency') ? document.getElementById('purc_currency').value : 'JD',
+                    rect: document.getElementById('rect_currency').value,
+                    issu: document.getElementById('issu_currency').value
+                },
+                headers: {
+                    title_index: document.getElementById('title_index').value,
+                    title_reim: document.getElementById('title_reim').value,
+                    title_ai_reim: document.getElementById('title_ai_reim').value,
+                    title_purc: document.getElementById('title_purc').value,
+                    title_rect: document.getElementById('title_rect').value,
+                    title_issu: document.getElementById('title_issu').value,
+                    reim_dept: document.getElementById('reim_dept').value,
+                    reim_head_date: document.getElementById('reim_head_date').value,
+                    ai_reim_dept: document.getElementById('ai_reim_dept').value,
+                    ai_reim_head_date: document.getElementById('ai_reim_head_date').value,
+                    purc_dept: document.getElementById('purc_dept').value,
+                    purc_sn_head: document.getElementById('purc_sn_head').value,
+                    purc_head_date: document.getElementById('purc_head_date').value,
+                    rect_head_date: document.getElementById('rect_head_date').value,
+                    issu_head_date: document.getElementById('issu_head_date').value,
+                    
+                    title_reim_h2: document.getElementById('title_reim_h2') ? document.getElementById('title_reim_h2').value : '',
+                    title_reim_h3: document.getElementById('title_reim_h3') ? document.getElementById('title_reim_h3').value : '',
+                    title_purc_h2: document.getElementById('title_purc_h2') ? document.getElementById('title_purc_h2').value : '',
+                    title_purc_h3: document.getElementById('title_purc_h3') ? document.getElementById('title_purc_h3').value : '',
+                    title_rect_h3: document.getElementById('title_rect_h3') ? document.getElementById('title_rect_h3').value : '',
+                    title_issu_h3: document.getElementById('title_issu_h3') ? document.getElementById('title_issu_h3').value : '',
+                    title_ai_reim_h2: document.getElementById('title_ai_reim_h2') ? document.getElementById('title_ai_reim_h2').value : '',
+                    title_ai_reim_h3: document.getElementById('title_ai_reim_h3') ? document.getElementById('title_ai_reim_h3').value : ''
+                },
+                indexRows: [],
+                ai_reimRows: [],
+                businessSNs: { reim: [], purc: [], rect: [], issu: [] }
+            };
+
+            for (let i = 1; i <= rowCounters.index; i++) {
+                let row = {};
+                indexFields.forEach(f => {
+                    let el = document.getElementById(`idx_${f}_${i}`);
+                    if(el) row[f] = el.value;
+                });
+                data.indexRows.push(row);
+            }
+            
+            for (let i = 1; i <= rowCounters.ai_reim; i++) {
+                let row = { sn: document.getElementById(`ai_reim_sn_${i}`)?.value };
+                aiReimFields.forEach(f => {
+                    let el = document.getElementById(`ai_reim_${f}_${i}`);
+                    if(el) row[f] = el.value;
+                });
+                data.ai_reimRows.push(row);
+            }
+
+            ['reim', 'purc', 'rect', 'issu'].forEach(prefix => {
+                for (let i = 1; i <= rowCounters[prefix]; i++) {
+                    let el = document.getElementById(`${prefix}_sn_${i}`);
+                    if (el) data.businessSNs[prefix].push(el.value);
+                }
+            });
+
+            localStorage.setItem('ccecc_jv_data_pro', JSON.stringify(data));
+            
+            const toast = document.getElementById('save_toast');
+            if (toast && toast.innerText === "✓ 已自动保存") {
+                toast.style.opacity = 1;
+                setTimeout(() => { toast.style.opacity = 0; }, 1500);
+            }
+        }, 300); 
+    }
+
+    function loadDataFromLocal() {
+        checkUndoAvailability(); 
+        
+        const todayStr = getTodayDateString();
+        const thisYearSN = new Date().getFullYear() + "-001";
+        
+        const saved = localStorage.getItem('ccecc_jv_data_pro');
+        const fieldsMap = {
+            'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+            'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
+            'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
+        };
+
+        if (saved) {
+            try {
+                let data = JSON.parse(saved);
+                
+                if (!sessionStorage.getItem('date_initialized')) {
+                    if (!data.headers) data.headers = {};
+                    ['reim_head_date', 'purc_head_date', 'rect_head_date', 'issu_head_date', 'ai_reim_head_date'].forEach(id => {
+                        data.headers[id] = todayStr;
+                    });
+                    sessionStorage.setItem('date_initialized', 'true');
+                    localStorage.setItem('ccecc_jv_data_pro', JSON.stringify(data));
+                }
+
+                if (data.rate) document.getElementById('global_rate').value = data.rate;
+                if (data.geminiKey && document.getElementById('gemini_api_key')) document.getElementById('gemini_api_key').value = data.geminiKey;
+
+                if (data.currencies) {
+                    for(let key in data.currencies) {
+                        if(document.getElementById(`${key}_currency`)) document.getElementById(`${key}_currency`).value = data.currencies[key];
+                    }
+                }
+                if (data.headers) {
+                    for(let key in data.headers) {
+                        if(document.getElementById(key) && data.headers[key]) {
+                            document.getElementById(key).value = data.headers[key];
+                        }
+                    }
+                }
+
+                data.indexRows.forEach((row, index) => {
+                    addIndexRow();
+                    indexFields.forEach(f => {
+                        let el = document.getElementById(`idx_${f}_${index+1}`);
+                        if(el && row[f] !== undefined) {
+                            el.value = (f === 'sn' && row[f] === '') ? (index + 1) : row[f];
+                        }
+                    });
+                });
+                
+                if (data.ai_reimRows) {
+                    data.ai_reimRows.forEach((row, index) => {
+                        addAiBusinessRow('ai_reim', aiReimFields);
+                        let snEl = document.getElementById(`ai_reim_sn_${index+1}`);
+                        if(snEl && row.sn) snEl.value = row.sn;
+                        aiReimFields.forEach(f => {
+                            let el = document.getElementById(`ai_reim_${f}_${index+1}`);
+                            if(el && row[f] !== undefined) el.value = row[f];
+                        });
+                    });
+                }
+
+                for(let prefix in data.businessSNs) {
+                    data.businessSNs[prefix].forEach((sn, index) => {
+                        addBusinessRow(prefix, fieldsMap[prefix]);
+                        let el = document.getElementById(`${prefix}_sn_${index+1}`);
+                        if(el) el.value = sn;
+                    });
+                }
+
+            } catch (e) {
+                console.error("加载本地数据失败", e);
+                initDefaultDemo(todayStr, thisYearSN);
+            }
+        } else {
+            initDefaultDemo(todayStr, thisYearSN);
+        }
+        initResizableColumns();
+    }
+    
+    function clearLocalData() {
+        if(confirm("⚠️ 确定要清空所有数据吗？\n（清空后右上角会显示“撤销”按钮，可找回最后 3 次的数据）")) {
+            let currentData = localStorage.getItem('ccecc_jv_data_pro');
+            if (currentData) {
+                let history = JSON.parse(localStorage.getItem('ccecc_jv_data_history') || '[]');
+                history.push(currentData);
+                if (history.length > 3) history.shift(); 
+                localStorage.setItem('ccecc_jv_data_history', JSON.stringify(history));
+            }
+            localStorage.removeItem('ccecc_jv_data_pro'); 
+            location.reload(); 
+        }
+    }
+
+    function undoClear() {
+        let history = JSON.parse(localStorage.getItem('ccecc_jv_data_history') || '[]');
+        if (history.length > 0) {
+            let lastState = history.pop(); 
+            localStorage.setItem('ccecc_jv_data_pro', lastState); 
+            localStorage.setItem('ccecc_jv_data_history', JSON.stringify(history)); 
+            location.reload(); 
+        } else {
+            alert("目前没有可供撤销的备份记录了。");
+        }
+    }
+
+    function checkUndoAvailability() {
+        let history = JSON.parse(localStorage.getItem('ccecc_jv_data_history') || '[]');
+        if(history.length > 0) {
+            document.getElementById('undo_btn').style.display = 'inline-block';
+        }
+    }
+
+    function exportToExcel() {
+        const activeContainer = document.getElementById(currentActiveTab);
+        if(!activeContainer) {
+            alert("无法定位当前页面内容");
+            return;
+        }
+
+        let ws_data = [];
+        let merges = [];
+        let rowHeights = [];
+        let r = 0;
+
+        const colWidthMap = {
+            'index_view': [{wpx: 80}, {wpx: 40}, {wpx: 60}, {wpx: 130}, {wpx: 100}, {wpx: 70}, {wpx: 50}, {wpx: 60}, {wpx: 50}, {wpx: 80}, {wpx: 70}, {wpx: 90}, {wpx: 100}, {wpx: 80}, {wpx: 80}],
+            'reimbursement': [{wpx: 50}, {wpx: 110}, {wpx: 80}, {wpx: 220}, {wpx: 90}, {wpx: 80}, {wpx: 110}, {wpx: 100}],
+            'ai_reimbursement': [{wpx: 50}, {wpx: 110}, {wpx: 80}, {wpx: 220}, {wpx: 90}, {wpx: 80}, {wpx: 110}, {wpx: 100}],
+            'purchase': [{wpx: 50}, {wpx: 180}, {wpx: 180}, {wpx: 70}, {wpx: 70}, {wpx: 150}, {wpx: 100}],
+            'receipt': [{wpx: 50}, {wpx: 180}, {wpx: 150}, {wpx: 90}, {wpx: 60}, {wpx: 60}, {wpx: 90}, {wpx: 130}],
+            'issue': [{wpx: 50}, {wpx: 180}, {wpx: 150}, {wpx: 90}, {wpx: 60}, {wpx: 60}, {wpx: 90}, {wpx: 130}]
+        };
+        const colWidths = colWidthMap[currentActiveTab] || [{wpx: 100}];
+        const colCount = colWidths.length;
+
+        const borderAll = { top: {style:'thin', color:{auto:1}}, bottom: {style:'thin', color:{auto:1}}, left: {style:'thin', color:{auto:1}}, right: {style:'thin', color:{auto:1}} };
+        const fontMain = { name: "Times New Roman", sz: 11 };
+        const fontBold = { name: "Times New Roman", sz: 11, bold: true };
+        
+        const styleTitle1 = { font: { name: "Times New Roman", sz: 20, bold: true }, alignment: { horizontal: "center", vertical: "center" } };
+        const styleTitle2 = { font: { name: "Times New Roman", sz: 16, bold: true }, alignment: { horizontal: "center", vertical: "center" } };
+        const styleTitle3 = { font: { name: "Times New Roman", sz: 12 }, alignment: { horizontal: "center", vertical: "center" } };
+        
+        const styleHeaderInfo = { font: fontBold, alignment: { vertical: "bottom" } };
+        const styleTh = { font: fontBold, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: borderAll, fill: { fgColor: { rgb: "F2F2F2" } } };
+        const styleTdCenter = { font: fontMain, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: borderAll };
+        const styleTfoot = { font: fontBold, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: borderAll };
+        const styleSig = { font: fontMain, alignment: { horizontal: "center", vertical: "center", wrapText: true } }; 
+
+        function getVal(el) {
+            if(!el) return "";
+            let clone = el.cloneNode(true);
+            
+            let select = clone.querySelector('select');
+            if(select) {
+                let span = document.createElement('span'); 
+                span.innerText = select.options[select.selectedIndex].text;
+                select.parentNode.replaceChild(span, select);
+            }
+            let input = clone.querySelector('input, textarea');
+            if(input) {
+                let span = document.createElement('span'); 
+                span.innerText = input.value;
+                input.parentNode.replaceChild(span, input);
+            }
+            
+            return clone.innerHTML
+                .replace(/<br\s*[\/]?>/gi, '\n')
+                .replace(/<[^>]+>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/金额\s*\(\s*(JD|USD|AED)\s*\)/g, '金额($1)')
+                .trim();
+        }
+
+        let titles = activeContainer.querySelectorAll('.doc-title .title-input, .doc-title .title-h2, .doc-title .title-h3, .doc-title h3');
+        titles.forEach(t => {
+            let text = (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') ? t.value : t.innerText;
+            let style = t.classList.contains('title-input') ? styleTitle1 : (t.classList.contains('title-h2') ? styleTitle2 : styleTitle3);
+            let height = t.classList.contains('title-input') ? 35 : (t.classList.contains('title-h2') ? 25 : 20);
+            
+            let row = new Array(colCount).fill("");
+            row[0] = { v: text, s: style };
+            ws_data.push(row);
+            merges.push({ s: { r: r, c: 0 }, e: { r: r, c: colCount - 1 } });
+            rowHeights[r] = { hpx: height };
+            r++;
+        });
+
+        let headerInfo = activeContainer.querySelector('.header-info');
+        if (headerInfo) {
+            let row = new Array(colCount).fill("");
+            let divs = headerInfo.querySelectorAll('div:not(.no-print)');
+            if(divs.length === 3) {
+                row[0] = { v: getVal(divs[0]), s: { ...styleHeaderInfo, alignment: { horizontal: "left", vertical: "bottom" } } };
+                row[Math.floor(colCount/2)] = { v: getVal(divs[1]), s: { ...styleHeaderInfo, alignment: { horizontal: "center", vertical: "bottom" } } };
+                row[colCount-1] = { v: getVal(divs[2]), s: { ...styleHeaderInfo, alignment: { horizontal: "right", vertical: "bottom" } } };
+                merges.push({s:{r:r, c:0}, e:{r:r, c:Math.floor(colCount/2)-1}});
+                merges.push({s:{r:r, c:Math.floor(colCount/2)}, e:{r:r, c:colCount-2}}); 
+            } else if (divs.length === 2) {
+                row[0] = { v: getVal(divs[0]), s: { ...styleHeaderInfo, alignment: { horizontal: "left", vertical: "bottom" } } };
+                row[colCount-1] = { v: getVal(divs[1]), s: { ...styleHeaderInfo, alignment: { horizontal: "right", vertical: "bottom" } } };
+                merges.push({s:{r:r, c:0}, e:{r:r, c:colCount-2}});
+            }
+            ws_data.push(row);
+            rowHeights[r] = { hpx: 30 }; 
+            r++;
+        }
+
+        let htmlTable = activeContainer.querySelector('table');
+        htmlTable.querySelectorAll('thead tr').forEach(tr => {
+            let row = [];
+            tr.querySelectorAll('th:not(.no-print)').forEach(th => {
+                row.push({ v: getVal(th), s: styleTh });
+            });
+            ws_data.push(row);
+            rowHeights[r] = { hpx: 40 }; 
+            r++;
+        });
+
+        htmlTable.querySelectorAll('tbody tr').forEach(tr => {
+            let row = [];
+            tr.querySelectorAll('td:not(.no-print)').forEach(td => {
+                row.push({ v: getVal(td), s: styleTdCenter });
+            });
+            ws_data.push(row);
+            rowHeights[r] = { hpx: 30 }; 
+            r++;
+        });
+
+        htmlTable.querySelectorAll('tfoot tr').forEach(tr => {
+            let row = new Array(colCount).fill("");
+            let currentC = 0;
+            tr.querySelectorAll('td:not(.no-print)').forEach(td => {
+                let colspan = parseInt(td.getAttribute('colspan') || 1);
+                let align = td.style.textAlign === 'left' ? "left" : (td.style.textAlign === 'right' ? "right" : "center");
+                row[currentC] = { v: getVal(td), s: { ...styleTfoot, alignment: { horizontal: align, vertical: "center", wrapText: true } } };
+                if (colspan > 1) {
+                    merges.push({ s: { r: r, c: currentC }, e: { r: r, c: currentC + colspan - 1 } });
+                    for(let i=1; i<colspan; i++) row[currentC + i] = { v: "", s: styleTfoot }; 
+                    currentC += colspan;
+                } else {
+                    currentC++;
+                }
+            });
+            ws_data.push(row.slice(0, colCount)); 
+            rowHeights[r] = { hpx: 35 }; 
+            r++;
+        });
+
+        let sigs = activeContainer.querySelectorAll('.signature-area .sig-row');
+        if(sigs.length > 0) {
+            ws_data.push(new Array(colCount).fill("")); 
+            rowHeights[r] = { hpx: 15 };
+            r++;
+
+            sigs.forEach(row => {
+                let tr = new Array(colCount).fill("");
+                let items = row.querySelectorAll('.sig-item');
+                
+                if(items.length > 0) {
+                    let colGroups = [];
+                    if ((currentActiveTab === 'reimbursement' || currentActiveTab === 'ai_reimbursement') && items.length === 4) {
+                        colGroups = [[0, 1], [2, 3], [4, 5], [6, 7]]; 
+                    } else if ((currentActiveTab === 'reimbursement' || currentActiveTab === 'ai_reimbursement') && items.length === 3) {
+                        colGroups = [[1, 2], [3, 4], [5, 6]];
+                    } else if (currentActiveTab === 'purchase' && items.length === 4) {
+                        colGroups = [[0, 1], [2, 3], [4, 5], [6, 6]]; 
+                    } else if ((currentActiveTab === 'receipt' || currentActiveTab === 'issue') && items.length === 3) {
+                        colGroups = [[0, 1], [2, 4], [5, 7]]; 
+                    } else {
+                        let step = Math.floor(colCount / items.length);
+                        for(let i=0; i<items.length; i++) {
+                            colGroups.push([i * step, (i === items.length - 1) ? colCount - 1 : (i * step + step - 1)]);
+                        }
+                    }
+
+                    items.forEach((item, idx) => {
+                        if(colGroups[idx]) {
+                            let text = getVal(item); 
+                            let startCol = colGroups[idx][0];
+                            let endCol = colGroups[idx][1];
+                            
+                            tr[startCol] = { v: text, s: styleSig };
+                            if (startCol !== endCol) {
+                                merges.push({ s: { r: r, c: startCol }, e: { r: r, c: endCol } });
+                            }
+                        }
+                    });
+                }
+                ws_data.push(tr);
+                rowHeights[r] = { hpx: 50 }; 
+                r++;
+                
+                ws_data.push(new Array(colCount).fill(""));
+                rowHeights[r] = { hpx: 15 };
+                r++;
+            });
+        }
+
+        let ws = XLSX.utils.aoa_to_sheet(ws_data);
+        ws['!merges'] = merges;
+        ws['!rows'] = rowHeights;
+        ws['!cols'] = colWidths; 
+
+        let wb = XLSX.utils.book_new();
+        let activeTabName = document.querySelector('.tab.active').innerText.replace('📑 ', '').replace('🤖', '').trim();
+        XLSX.utils.book_append_sheet(wb, ws, activeTabName);
+
+        XLSX.writeFile(wb, `智能单据管理-Allen.xlsx`);
+
+        afterDocumentOutput();
+    }
+
+    window.addEventListener('afterprint', afterDocumentOutput);
+
+    function afterDocumentOutput() {
+        if (currentActiveTab === 'purchase') {
+            let snEl = document.getElementById('purc_sn_head');
+            if (snEl && snEl.value) {
+                let match = snEl.value.match(/^(.*?)(\d+)$/);
+                if (match) {
+                    let prefix = match[1];
+                    let numStr = match[2];
+                    let nextNum = parseInt(numStr, 10) + 1;
+                    snEl.value = prefix + String(nextNum).padStart(numStr.length, '0');
+                }
+            }
+        }
+
+        let activeTabDateMap = {
+            'reimbursement': 'reim_head_date',
+            'purchase': 'purc_head_date',
+            'receipt': 'rect_head_date',
+            'issue': 'issu_head_date',
+            'ai_reimbursement': 'ai_reim_head_date'
+        };
+        let dateFieldId = activeTabDateMap[currentActiveTab];
+        if (dateFieldId) {
+            let dateEl = document.getElementById(dateFieldId);
+            if (dateEl) {
+                dateEl.value = getTodayDateString();
+                syncDates(dateEl.value); 
+            }
+        }
+
+        const toast = document.getElementById('save_toast');
+        if (toast) {
+            toast.innerText = "✓ 打印/导出完毕，编号与日期已自动更新";
+            toast.style.opacity = 1;
+            setTimeout(() => { 
+                toast.innerText = "✓ 已自动保存";
+                toast.style.opacity = 0; 
+            }, 3000);
+        }
+
+        saveDataToLocal();
+    }
+
+    function initDefaultDemo(todayStr, thisYearSN) {
+        if(document.getElementById('reim_head_date')) document.getElementById('reim_head_date').value = todayStr;
+        if(document.getElementById('purc_head_date')) document.getElementById('purc_head_date').value = todayStr;
+        if(document.getElementById('rect_head_date')) document.getElementById('rect_head_date').value = todayStr;
+        if(document.getElementById('issu_head_date')) document.getElementById('issu_head_date').value = todayStr;
+        if(document.getElementById('ai_reim_head_date')) document.getElementById('ai_reim_head_date').value = todayStr;
+        if(document.getElementById('purc_sn_head')) document.getElementById('purc_sn_head').value = thisYearSN;
+        sessionStorage.setItem('date_initialized', 'true');
+
+        for(let i=0; i<10; i++) addIndexRow(true);
+        const demoData = [
+            ['2026-07-06', '1', '1', 'HP Printer', 'HP LaserJet Pro MFP', 'Office', 'Unit', '1.00', '1', '0.850', '0.150', '1.000', 'Amman office', '约旦项目', 'JV'],
+            ['2026-07-07', '2', '1', 'A4 Paper', 'A4', 'Office', 'Boxes', '10.62', '1', '9.000', '1.620', '10.620', 'Amman office', '约旦项目', '']
+        ];
+        demoData.forEach((data, index) => {
+            let rowNum = index + 1;
+            indexFields.forEach((field, fIdx) => {
+                let el = document.getElementById(`idx_${field}_${rowNum}`);
+                if(el && data[fIdx] !== undefined) el.value = data[fIdx];
+            });
+        });
+        
+        syncBusinessRows();
+    }
+
+    window.onload = function() {
+        loadDataFromLocal();
+        syncBusinessRows();
+        isInitializing = false; 
+        recalculateAll(); 
+    };
+
+    // ==========================================
+    // === 高清图片快照审批联动功能 (仅限采购单) ===
+    // ==========================================
+    function submitToLan() {
+        if (currentActiveTab !== 'purchase') {
+            alert("⚠️ 审批系统设定：目前仅支持【采购申请单】的在线流转审批！");
+            return;
+        }
+        if(!confirm("确定要把当前【采购申请单】生成完美排版的图片，并推送给领导审批吗？\n之前在该单上的签字记录将会被清空。")) return;
+
+        let btnNodes = document.querySelectorAll('.lan-approval-btn');
+        let launchBtn = btnNodes[0];
+        let originalText = launchBtn.innerText;
+        launchBtn.innerText = '📸 生成快照中...';
+        launchBtn.disabled = true;
+
+        // 1. 克隆采购单的表格内容
+        let purchaseDiv = document.getElementById('purchase');
+        let cloneNode = purchaseDiv.cloneNode(true);
+        
+        // 2. 清理不需要领导看到的多余元素
+        cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
+        cloneNode.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove()); 
+        
+        // 3. 将输入框里的值固化为纯文本
+        let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
+        let clonedInputs = cloneNode.querySelectorAll('input, textarea, select');
+
+        clonedInputs.forEach((el, index) => {
+            let orig = originalInputs[index];
+            let span = document.createElement('span');
+            
+            let val = '';
+            if (orig.tagName === 'SELECT') {
+                if (orig.selectedIndex >= 0) val = orig.options[orig.selectedIndex].text;
+            } else {
+                val = orig.value || '';
+            }
+
+            span.innerText = val;
+            if(orig.style.fontWeight === 'bold') span.style.fontWeight = 'bold';
+            span.style.fontSize = '14px';
+            span.style.fontFamily = 'inherit';
+            span.style.display = 'inline-block';
+            span.style.padding = '2px';
+            el.parentNode.replaceChild(span, el);
+        });
+
+        // 4. 准备截图环境：强制宽度以确保 PC 排版比例，临时放入 DOM 以便渲染
+        cloneNode.style.position = 'absolute';
+        cloneNode.style.top = '-9999px';
+        cloneNode.style.left = '0';
+        cloneNode.style.width = '1100px'; 
+        cloneNode.style.backgroundColor = '#ffffff';
+        cloneNode.style.padding = '20px';
+        cloneNode.style.boxSizing = 'border-box';
+        document.body.appendChild(cloneNode);
+
+        // 5. 调用 html2canvas 生成高清图片
+        html2canvas(cloneNode, { scale: 2, useCORS: true }).then(canvas => {
+            document.body.removeChild(cloneNode); // 渲染完毕后移除克隆节点
+            let imgBase64 = canvas.toDataURL('image/png');
+            
+            // 组装成一个可以自适应手机屏幕的 img 标签
+            let htmlContent = `<img src="${imgBase64}" style="width: 100%; height: auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px;">`;
+
+            // 6. 发送含有图片的 HTML 给后端
+            fetch('/api/submit_approval', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ html_content: htmlContent })
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`服务器返回错误 ${res.status}: ${errText.substring(0, 50)}`);
+                }
+                return res.json();
+            })
+            .then(res => {
+                launchBtn.innerText = originalText;
+                launchBtn.disabled = false;
+                if(res.status === 'success') {
+                    alert('✅ 采购单快照已成功推送到手机审批端！\n\n请通知领导访问链接查看详情并签字。');
+                } else {
+                    alert('❌ 推送失败：' + (res.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                launchBtn.innerText = originalText;
+                launchBtn.disabled = false;
+                console.error(err);
+                alert('❌ 推送失败！\n\n详细原因：' + err.message);
+            });
+        }).catch(err => {
+            if (document.body.contains(cloneNode)) document.body.removeChild(cloneNode);
+            launchBtn.innerText = originalText;
+            launchBtn.disabled = false;
+            alert('❌ 生成图片快照失败！\n原因：' + err.message);
+        });
+    }
+
+    function loadLanSignatures() {
+        if (currentActiveTab !== 'purchase') {
+            alert("⚠️ 系统限定：目前只能刷新【采购申请单】的领导签字！");
+            return;
+        }
+        fetch('/api/pending_list')
+        .then(async res => {
+            if (!res.ok) throw new Error('服务器状态码 ' + res.status);
+            return res.json();
+        })
+        .then(data => {
+            if(data['current_form'] && data['current_form'].signatures) {
+                const sigs = data['current_form'].signatures;
+                let foundAny = false;
+                
+                const activeTab = document.getElementById('purchase');
+                const sigNodes = activeTab.querySelectorAll('.sig-item');
+                
+                sigNodes.forEach(node => {
+                    if (node.innerText.includes('副经理')) {
+                        if (sigs['deputy']) {
+                            node.innerHTML = `项目副经理：<br><span class="en">(Deputy Project Manager)</span><br><img src="${sigs['deputy']}" style="height:45px; margin-top:5px; mix-blend-mode: multiply;">`;
+                            foundAny = true;
+                        }
+                    }
+                    if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
+                         if (sigs['manager']) {
+                             node.innerHTML = `项目经理：<br><span class="en">(Project Manager)</span><br><img src="${sigs['manager']}" style="height:45px; margin-top:5px; mix-blend-mode: multiply;">`;
+                             foundAny = true;
+                         }
+                    }
+                });
+                
+                if(foundAny) alert('✅ 签名已成功刷新！可以打印或导出了。');
+                else alert('⏳ 还没有收到领导的签字记录呢。');
+            }
+        }).catch(err => alert('❌ 获取签名失败！错误详情：' + err.message));
+    }
+</script>
+
+<script id="ai-external-module">
+    function saveApiKey() {
+        saveDataToLocal();
+        let btn = document.querySelector('.api-save-btn');
+        let originalText = btn.innerText;
+        btn.innerText = "已安全保存！";
+        btn.style.backgroundColor = "#17a2b8";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.backgroundColor = "#28a745";
+        }, 2000);
+    }
+
+    function openSmartPasteModal() {
+        document.getElementById('smartPasteModal').style.display = 'flex';
+        document.getElementById('smartPasteText').value = '';
+        document.getElementById('modalUploadStatus').innerText = "图片将安全发送至您的本地 Python 引擎处理。";
+        document.getElementById('modalUploadStatus').style.color = "#666";
+    }
+
+    function closeSmartPasteModal() {
+        document.getElementById('smartPasteModal').style.display = 'none';
+    }
+
+    function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            if (file.type === 'application/pdf') {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: file.type });
+                reader.onerror = error => reject(error);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    let width = img.width, height = img.height;
+                    const maxDim = 2048; 
+                    
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width; width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height; height = maxDim;
+                    }
+                    
+                    canvas.width = width; canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve({ base64: canvas.toDataURL('image/jpeg', 0.9).split(',')[1], mimeType: 'image/jpeg' });
+                };
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function executeImageAI(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const apiKey = document.getElementById('gemini_api_key').value.trim();
+        if (!apiKey) {
+            alert("请先在页面最底部的配置区贴入您的 Gemini API 密钥！");
+            event.target.value = '';
+            return;
+        }
+
+        const statusEl = document.getElementById('modalUploadStatus');
+        const btnEl = document.getElementById('modalUploadBtn');
+        const originalBtnText = btnEl.innerText;
+
+        btnEl.innerText = '⏳ 交由 Python 后台解析中...';
+        btnEl.style.background = '#e0a800';
+        btnEl.disabled = true;
+        statusEl.innerText = "正在通过本地服务器安全直连 AI 节点...";
+        statusEl.style.color = "#856404";
+
+        try {
+            const { base64, mimeType } = await compressImage(file);
+            
+            const promptText = `请精准分析这份文件。它可能是一张单张发票，也可能是包含多张发票的PDF或长图。
+请将识别到的每一张发票/小票都独立提取出来，严格按 JSON 数组 (JSON Array) 格式返回。
+
+识别规则：
+1. 独立识别：文件里有几张独立的发票，就生成几个 JSON 对象。不要把多张发票的金额加总合并！
+2. date: 发票日期，格式严格为 YYYY-MM-DD。注意仔细分辨数字（如2026与2016），优先识别为最近年份。
+3. item: 简明扼要的英文物品或服务名称（如 "Office Stationery", "Vehicle Fuel", "Pharmacy Supplies", "Catering"）。
+4. preTaxUSD: 提取税前金额 (Subtotal / Pre-tax Amount)，只留数字（如 3.100）。如果发票上没有明确标明，请根据当地常见税率（例如约旦当地标准）推算，或者无法推算时填 "0.000"。
+5. taxUSD: 提取税费金额 (Tax / VAT Amount)，只留数字（如 0.350）。如果发票上没有明确标明税费，填 "0.000"。
+6. amountUSD: 提取该张发票最下方的【最终总金额 Grand Total / NET Total】，只留数字（如 3.450），不要提取小计或税额。
+7. costCenter: 成本核算对象，一律固定填入 "JV"。
+8. attachment: 固定返回 "1"。
+
+严格输出 JSON 数组格式（不要包含任何 markdown 标记如 \`\`\`json 或多余解释）：
+[
+  {"date":"YYYY-MM-DD","item":"简短英文","preTaxUSD":"0.000","taxUSD":"0.000","amountUSD":"0.000","costCenter":"JV","attachment":"1"}
+]`;
+
+            const response = await fetch('/api/ocr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    api_key: apiKey,
+                    mime_type: mimeType,
+                    base64_image: base64,
+                    prompt_text: promptText
+                })
+            });
+
+            const result = await response.json();
+            
+            if (!response.ok || result.error) {
+                throw new Error(result.error || "本地服务器响应异常");
+            }
+
+            let aiText = result.result;
+            // 完美修复截断问题
+            aiText = aiText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+
+            try {
+                let parsedData = JSON.parse(aiText);
+                if (!Array.isArray(parsedData)) {
+                    parsedData = [parsedData];
+                }
+
+                parsedData.forEach(item => {
+                    addAiBusinessRow('ai_reim', ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'], false);
+                    let newIdx = rowCounters['ai_reim'];
+
+                    if (item.date) document.getElementById(`ai_reim_date_${newIdx}`).value = item.date;
+                    if (item.item) document.getElementById(`ai_reim_item_${newIdx}`).value = item.item;
+                    if (item.preTaxUSD) document.getElementById(`ai_reim_preTaxUSD_${newIdx}`).value = item.preTaxUSD;
+                    if (item.taxUSD) document.getElementById(`ai_reim_taxUSD_${newIdx}`).value = item.taxUSD;
+                    if (item.amountUSD) document.getElementById(`ai_reim_amountUSD_${newIdx}`).value = item.amountUSD;
+                    if (item.costCenter) document.getElementById(`ai_reim_costCenter_${newIdx}`).value = item.costCenter;
+                    if (item.attachment) document.getElementById(`ai_reim_attachment_${newIdx}`).value = item.attachment;
+                });
+
+                calculateTotal('ai_reim');
+                saveDataToLocal();
+                closeSmartPasteModal();
+
+            } catch (jsonErr) {
+                throw new Error("AI 返回的数据无法解析为 JSON: " + aiText);
+            }
+
+        } catch (err) {
+            alert('❌ 识别失败: ' + err.message);
+        } finally {
+            btnEl.innerText = originalBtnText;
+            btnEl.style.background = '#6f42c1';
+            btnEl.disabled = false;
+            statusEl.innerText = "图片将安全发送至您的本地 Python 引擎处理。";
+            statusEl.style.color = "#666";
+            event.target.value = '';
+        }
+    }
+
+    function executeSmartPaste() {
+        let text = document.getElementById('smartPasteText').value.trim();
+        if (!text) {
+            alert("请先粘贴文本！");
+            return;
+        }
+        alert("文本解析功能已触发，请在此处接入相关逻辑...\n获取到的文本: " + text.substring(0, 20) + "...");
+    }
+</script>
+</body>
+</html>
