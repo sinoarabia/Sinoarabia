@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <script>if(sessionStorage.getItem("sino_auth") !== "granted") { window.location.href="index.html"; }</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>单据在线生成管理系统</title>
@@ -407,15 +406,27 @@
                     <th width="23%">规格型号<br>Specificiation</th>
                     <th width="8%">单位<br>Unit</th>
                     <th width="8%">数量<br>Qty.</th>
-                    <th width="17%">用途<br>Purpose</th>
+                    <th width="17%">价格(<select class="currency-select" id="purc_currency" onchange="refreshAllForms()">
+                        <option value="JD" selected>JD</option>
+                        <option value="USD">USD</option>
+                        <option value="AED">AED</option>
+                    </select>)<br>Price</th>
                     <th width="10%">备注<br>Remark</th>
                     <th width="5%" class="no-print">操作</th>
                 </tr>
             </thead>
             <tbody id="tbody_purc"></tbody>
+            <tfoot>
+                <tr class="tfoot-row">
+                    <td colspan="5" style="text-align: right; padding-right: 15px;" id="purc_total_label">合计 Total (JD):</td>
+                    <td id="purc_total_amt">0.000</td>
+                    <td></td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
         </table>
         <div class="add-row-container no-print">
-            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'], true)">+ 新增一行</button>
+            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'], true)">+ 新增一行</button>
         </div>
         <div class="signature-area" id="sig_purchase">
             <div class="sig-row">
@@ -571,7 +582,7 @@
                     <td id="ai_reim_total_tax">0.000</td>
                     <td id="ai_reim_total_amt">0.000</td>
                     <td></td>
-                    <td class="no-print"></td>
+     <td class="no-print"></td>
                 </tr>
             </tfoot>
         </table>
@@ -875,7 +886,7 @@ function forceSaveData() {
 
                     let fieldsMap = {
                         'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-                        'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+                        'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
                         'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
                         'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
                     };
@@ -1009,7 +1020,7 @@ function forceSaveData() {
         const targetCount = rowCounters.index;
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1154,7 +1165,6 @@ function forceSaveData() {
     function removeRow(btnElement, prefix) {
         btnElement.closest('tr').remove();
         calculateTotal(prefix);
-        
         if (prefix === 'ai_reim') {
             resequenceAiTable(); 
             if(!isInitializing) saveDataToLocal();
@@ -1264,7 +1274,7 @@ function forceSaveData() {
         const prefixes = ['reim', 'purc', 'rect', 'issu'];
         const fieldMaps = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1492,7 +1502,7 @@ function forceSaveData() {
         const saved = localStorage.getItem('ccecc_jv_data_pro');
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'purpose', 'remark'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
