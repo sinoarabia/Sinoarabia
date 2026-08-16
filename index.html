@@ -302,19 +302,14 @@
     </div>
   </div>
 
-  <!-- 解锁后的内容容器（初始隐藏） -->
-  <div id="protectedContent" style="display: none; position: relative; z-index: 2; color: #fff;">
-    <!-- 你的正式网站内容放置在此处 -->
-  </div>
-
   <script>
     // 在这里配置你的 VIP 专属账号和密码
     const VIP_USER = "iiavatar";
     const VIP_PASSWORD = "Zhang8319987";
 
-    // 检查是否已经解锁过
+    // 检查是否已经解锁过，如果已经登录过，直接跳转到你的主页面
     if (sessionStorage.getItem("sino_auth") === "granted") {
-      unlockSite();
+      window.location.replace("AI Agent.html");
     }
 
     function verifyLogin() {
@@ -324,9 +319,11 @@
       const err = document.getElementById("errorMsg");
 
       if (user.value === VIP_USER && pass.value === VIP_PASSWORD) {
+        // 密码正确！写入缓存，并自动跳转
         sessionStorage.setItem("sino_auth", "granted");
-        unlockSite();
+        window.location.replace("AI Agent.html");
       } else {
+        // 密码错误，抖动报错
         card.classList.remove("shake");
         void card.offsetWidth; // 触发重绘
         card.classList.add("shake");
@@ -335,13 +332,7 @@
       }
     }
 
-    function unlockSite() {
-      document.getElementById("lockCard").style.display = "none";
-      document.querySelectorAll(".ambient-glow").forEach(el => el.style.display = "none");
-      document.getElementById("protectedContent").style.display = "block";
-    }
-
-    // 支持按回车键直接提交 (在密码框内按回车)
+    // 支持按回车键直接提交
     document.getElementById("vipPass").addEventListener("keyup", function(event) {
       if (event.key === "Enter") {
         verifyLogin();
