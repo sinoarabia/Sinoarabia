@@ -1851,8 +1851,7 @@ function autoFill(rowId, prefix, fields) {
 
         afterDocumentOutput();
     }
-
-    window.addEventListener('afterprint', afterDocumentOutput);
+window.addEventListener('afterprint', afterDocumentOutput);
 
     function afterDocumentOutput() {
         if (currentActiveTab === 'purchase') {
@@ -2003,9 +2002,17 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 launchBtn.innerText = originalText;
                 launchBtn.disabled = false;
                 if(res.status === 'success') {
-                    // 🌟 修复点 1：使用 prompt 直接提供生成的审批链接供复制
-                    let approvalLink = res.approval_url || (window.location.origin + '/approval'); 
-                    prompt('✅ 采购单快照已成功推送到手机审批端！\n\n请复制下方专属审批链接，发给领导审批：', approvalLink);
+                    // 🌟 核心修复：生成正确的审批页面链接，并自动复制
+                    let approvalLink = window.location.origin + '/approve_page';
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(approvalLink).then(() => {
+                            alert('✅ 采购单快照已成功推送到手机审批端！\n\n🔗 专属审批链接已【自动复制】到您的剪贴板：\n' + approvalLink + '\n\n您现在可以直接去微信或 Telegram 粘贴发给领导了。');
+                        }).catch(() => {
+                            prompt('✅ 采购单快照已成功推送！\n请手动复制下方专属审批链接发给领导：', approvalLink);
+                        });
+                    } else {
+                        prompt('✅ 采购单快照已成功推送！\n请手动复制下方专属审批链接发给领导：', approvalLink);
+                    }
                 } else {
                     alert('❌ 推送失败：' + (res.error || '未知错误'));
                 }
