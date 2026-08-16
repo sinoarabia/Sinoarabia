@@ -58,7 +58,6 @@
         .zoom-img-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; user-select: none; }
         .zoom-img-wrapper img { max-width: 90vw; max-height: 85vh; object-fit: contain; transform-origin: center center; transition: transform 0.05s ease-out; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); border-radius: 4px; }
         .zoom-close-btn { position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #fff; font-size: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100000; backdrop-filter: blur(8px); }
-
     </style>
 </head>
 <body>
@@ -93,9 +92,9 @@
             <div id="doc_content" style="display:none; position: relative;"></div>
             <div class="stamps-overlay" id="preview_stamps"></div>
             <p id="zoom_hint" style="display:none; text-align: center; font-size: 13px; color: #666; margin-top: 15px; line-height: 1.6;">
-    👆 Click image to zoom in/out. Landscape mode is recommended for mobile.<br>
-    انقر على الصورة للتكبير أو التصغير. يُنصح باستخدام الوضع الأفقي للتصفح على الهاتف.
-</p>
+                👆 Click image to zoom in/out. Landscape mode is recommended for mobile.<br>
+                انقر على الصورة للتكبير أو التصغير. يُنصح باستخدام الوضع الأفقي للتصفح على الهاتف.
+            </p>
         </div>
 
         <div class="instruction-box">
@@ -129,7 +128,6 @@
                     <span class="bi-en">Project Director</span>
                     <span class="bi-ar">مدير المشروع</span>
                 </div>
-                <!-- 默认禁用清空按钮 -->
                 <button class="btn-clear-small" id="btn-clear-pd" onclick="padPd.clear()" disabled>Clear / مسح</button>
             </div>
             <div class="canvas-container">
@@ -138,13 +136,11 @@
                 <img id="img-pd" class="locked-sig" style="display:none;" src="">
                 <div id="badge-pd" class="locked-badge" style="display:none;">✅ Already Signed</div>
                 
-                <!-- PD 锁定遮罩层 (等 DPD 签完才消失) -->
                 <div id="pd-lock-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(238,238,238,0.85); z-index:10; display:flex; flex-direction:column; justify-content:center; align-items:center; border: 2px dashed #adb5bd;">
                     <span style="font-size: 15px; font-weight: bold; margin-bottom: 5px; color:#d9534f;">⏳ Please wait for DPD to sign</span>
                     <span style="font-family: Tahoma, sans-serif; font-size: 14px; font-weight: bold; direction: rtl; color:#d9534f;">يرجى انتظار توقيع نائب مدير المشروع</span>
                 </div>
             </div>
-            <!-- 默认禁用提交按钮 -->
             <button class="btn-submit" id="btn-submit-pd" onclick="submitSignature('pd')" disabled>
                 ✅ Submit Signature
                 <span>إرسال التوقيع</span>
@@ -215,7 +211,6 @@
 
             if(role === 'dpd') {
                 dpdSigned = true;
-                // 解锁 PD 区域
                 let pdOverlay = document.getElementById('pd-lock-overlay');
                 if (pdOverlay) pdOverlay.style.display = 'none';
                 document.getElementById('btn-clear-pd').disabled = false;
@@ -239,8 +234,7 @@
             let btnSave = document.getElementById(`btn-submit-${role}`);
 
             if (!pad || pad.isEmpty()) {
-                alert("Please provide your signature first! 
- يرجى تقديم توقيعك أولاً!");
+                alert("Please provide your signature first! \n يرجى تقديم توقيعك أولاً!");
                 return;
             }
 
@@ -258,20 +252,17 @@
             .then(res => res.json())
             .then(data => {
                 if(data.status === 'success') {
-                    alert('🎉 Signature submitted successfully! 
- تم إرسال التوقيع بنجاح!');
+                    alert('🎉 Signature submitted successfully! \n تم إرسال التوقيع بنجاح!');
                     lockPad(role, url); 
                     if(role === 'pd') setTimeout(() => { window.location.reload(); }, 1500);
                 } else {
-                    alert('❌ Submit failed. 
- فشل الإرسال.');
+                    alert('❌ Submit failed. \n فشل الإرسال.');
                     btnSave.innerHTML = originalHtml;
                     btnSave.disabled = false;
                 }
             })
             .catch(err => {
-                alert('Network error. 
- خطأ في الشبكة.');
+                alert('Network error. \n خطأ في الشبكة.');
                 btnSave.innerHTML = originalHtml;
                 btnSave.disabled = false;
             });

@@ -582,7 +582,7 @@
                     <td id="ai_reim_total_tax">0.000</td>
                     <td id="ai_reim_total_amt">0.000</td>
                     <td></td>
-     <td class="no-print"></td>
+                    <td class="no-print"></td>
                 </tr>
             </tfoot>
         </table>
@@ -1165,6 +1165,7 @@ function forceSaveData() {
     function removeRow(btnElement, prefix) {
         btnElement.closest('tr').remove();
         calculateTotal(prefix);
+        
         if (prefix === 'ai_reim') {
             resequenceAiTable(); 
             if(!isInitializing) saveDataToLocal();
@@ -1215,25 +1216,73 @@ function forceSaveData() {
 
     function recalculateAll() {
         const rate = parseFloat(document.getElementById('global_rate').value) || 0.708;
-        const idxCurrency = document.getElementById('idx_currency').value;
+        const currencyEl = document.getElementById('idx_currency');
+        const idxCurrency = currencyEl.value;
         
         for (let i = 1; i <= rowCounters.index; i++) {
             const priceEl = document.getElementById(`idx_priceJD_${i}`);
             const qtyEl = document.getElementById(`idx_qty_${i}`);
+            const preTaxEl = document.getElementById(`idx_preTaxUSD_${i}`);
+            const taxEl = document.getElementById(`idx_taxUSD_${i}`);
             const amountEl = document.getElementById(`idx_amountUSD_${i}`);
             
-            if (priceEl && qtyEl && amountEl) {
-                const price = parseFloat(priceEl.value);
-                const qty = parseFloat(qtyEl.value);
-                if (!isNaN(price) && !isNaN(qty)) {
-                    const totalBase = price * qty;
-                    amountEl.value = (idxCurrency === 'USD' ? (totalBase / rate) : totalBase).toFixed(3);
+            if (amountEl) {
+                let expectedAmount = null;
+                let preTaxStr = preTaxEl ? preTaxEl.value.trim() : '';
+                let taxStr = taxEl ? taxEl.value.trim() : '';
+                let priceStr = priceEl ? priceEl.value.trim() : '';
+                let qtyStr = qtyEl ? qtyEl.value.trim() : '';
+                
+                // 1. 优先逻辑：只要【税前】或【税费】填了任意一个，系统就接管自动加和 (空值按0算)
+                if (preTaxStr !== '' || taxStr !== '') {
+                    let p = parseFloat(preTaxStr) || 0;
+                    let t = parseFloat(taxStr) || 0;
+                    expectedAmount = p + t;
+                } 
+                // 2. 备用逻辑：采购单模式 (没填税，只填了单价和数量)
+                else if (priceStr !== '' && qtyStr !== '') {
+                    let p = parseFloat(priceStr) || 0;
+                    let q = parseFloat(qtyStr) || 0;
+                    let totalBase = p * q;
+                    expectedAmount = (idxCurrency === 'USD' ? (totalBase / rate) : totalBase);
+                }
+
+                if (expectedAmount !== null) {
+                    let currentVal = amountEl.value.trim();
+                    let isActiveTrigger = (document.activeElement === preTaxEl || 
+                                           document.activeElement === taxEl || 
+                                           document.activeElement === priceEl || 
+                                           document.activeElement === qtyEl || 
+                                           document.activeElement === currencyEl);
+                    
+                    // 状态A：正在输入前置条件，或者含税金额被清空了，自动填入！
+                    if (isActiveTrigger || currentVal === '') {
+                        amountEl.value = expectedAmount.toFixed(3);
+                        amountEl.style.color = '';
+                        amountEl.style.fontWeight = '';
+                        amountEl.title = '';
+                    } else {
+                        // 状态B：用户手动改了含税金额。进行严谨比对！
+                        let currentAmount = parseFloat(currentVal);
+                        if (currentVal !== '' && !isNaN(currentAmount) && Math.abs(currentAmount - expectedAmount) > 0.001) {
+                            amountEl.style.color = '#dc3545'; // 变红
+                            amountEl.style.fontWeight = 'bold'; // 加粗
+                            amountEl.title = '🚨 警告：您手填的金额与系统(税前+税费)自动计算的结果不符！';
+                        } else {
+                            amountEl.style.color = '';
+                            amountEl.style.fontWeight = '';
+                            amountEl.title = '';
+                        }
+                    }
+                } else {
+                    amountEl.style.color = '';
+                    amountEl.style.fontWeight = '';
+                    amountEl.title = '';
                 }
             }
         }
         refreshAllForms();
     }
-
     function autoFill(rowId, prefix, fields) {
         const snValue = document.getElementById(prefix + '_sn_' + rowId).value;
         const record = getIndexDataBySN(snValue);
@@ -1951,7 +2000,7 @@ function forceSaveData() {
             let imgBase64 = canvas.toDataURL('image/png');
             
             // 组装成一个可以自适应手机屏幕的 img 标签
-            let htmlContent = `<img src="${imgBase64}" style="width: 100%; height: auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer;" onclick="openZoomModal(this.src)">`;
+            let htmlContent = `<img src="${imgBase64}" style="width: 100%; height: auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer;" onclick="if(typeof openZoomModal === 'function') openZoomModal(this.getAttribute('src'))">`;
 
             // 6. 发送含有图片的 HTML 给后端
             fetch('/api/submit_approval', {
