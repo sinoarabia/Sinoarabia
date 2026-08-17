@@ -1931,7 +1931,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
         recalculateAll(); 
     };
 
-    // ==========================================
+// ==========================================
     // === 高清图片快照审批联动功能 (仅限采购单) ===
     // ==========================================
     function submitToLan() {
@@ -1950,7 +1950,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
         let purchaseDiv = document.getElementById('purchase');
         let cloneNode = purchaseDiv.cloneNode(true);
         
-        // 🚨 核心修复：坚决不提前删除壳子，保证提取数据前后的一一对应
         let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
         let clonedInputs = cloneNode.querySelectorAll('input, textarea, select');
 
@@ -1974,7 +1973,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
             el.parentNode.replaceChild(span, el);
         });
 
-        // 🚨 核心修复：数据填完且对齐后，再删除废壳，绝对不会再有阶梯错位
         cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
 
         cloneNode.style.position = 'absolute';
@@ -2008,7 +2006,9 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 launchBtn.innerText = originalText;
                 launchBtn.disabled = false;
                 if(res.status === 'success') {
-                    let approvalLink = window.location.origin + '/approve_page';
+                    // 🌟 破案了！核心修复：必须读取后端刚刚生成的动态专属审批链接！
+                    let approvalLink = res.approval_url || (window.location.origin + '/approve_page');
+                    
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(approvalLink).then(() => {
                             alert('✅ 采购单快照已成功推送到手机审批端！\n\n🔗 专属审批链接已【自动复制】到您的剪贴板：\n' + approvalLink + '\n\n您现在可以直接去微信或 Telegram 粘贴发给领导了。');
@@ -2035,7 +2035,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
             alert('❌ 生成图片快照失败！\n原因：' + err.message);
         });
     }
-
 function loadLanSignatures() {
         if (currentActiveTab !== 'purchase') {
             alert("⚠️ 系统限定：目前只能刷新【采购申请单】的领导签字！");
