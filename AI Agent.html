@@ -2036,7 +2036,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
         });
     }
 
-    function loadLanSignatures() {
+function loadLanSignatures() {
         if (currentActiveTab !== 'purchase') {
             alert("⚠️ 系统限定：目前只能刷新【采购申请单】的领导签字！");
             return;
@@ -2055,25 +2055,38 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 const sigNodes = activeTab.querySelectorAll('.sig-item');
                 
                 sigNodes.forEach(node => {
-                    node.style.position = 'relative'; 
-
+                    // 🌟 核心优化：采用Flex布局，签字悬浮上方，时间设备左对齐靠下，完美规避排版错乱
                     if (node.innerText.includes('副经理')) {
-                        if (sigs['deputy']) {
-                            node.innerHTML = `项目副经理：<br><span class="en">(Deputy Project Manager)</span>
-                            <img src="${sigs['deputy']}" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); height: 75px; mix-blend-mode: multiply; z-index: 1; pointer-events: none;">`;
+                        if (sigs['deputy'] && sigs['deputy'].url) {
+                            node.innerHTML = `
+                            <div style="display: flex; flex-direction: column; align-items: center; position: relative; width: 100%;">
+                                <img src="${sigs['deputy'].url}" style="height: 65px; mix-blend-mode: multiply; margin-bottom: -5px; z-index: 2; position: relative;">
+                                <div style="z-index: 1; position: relative; background: transparent; text-align: center;">项目副经理：<br><span class="en">(Deputy Project Manager)</span></div>
+                                <div style="margin-top: 10px; font-size: 11px; color: #666; font-weight: normal; text-align: left; width: 100%; border-top: 1px dashed #ccc; padding-top: 5px; font-family: 'Arial', sans-serif; line-height: 1.4;">
+                                    <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['deputy'].time || 'Unknown'}<br>
+                                    <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['deputy'].device || 'Unknown'}
+                                </div>
+                            </div>`;
                             foundAny = true;
                         }
                     }
                     if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
-                         if (sigs['manager']) {
-                             node.innerHTML = `项目经理：<br><span class="en">(Project Manager)</span>
-                             <img src="${sigs['manager']}" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); height: 75px; mix-blend-mode: multiply; z-index: 1; pointer-events: none;">`;
+                         if (sigs['manager'] && sigs['manager'].url) {
+                             node.innerHTML = `
+                             <div style="display: flex; flex-direction: column; align-items: center; position: relative; width: 100%;">
+                                <img src="${sigs['manager'].url}" style="height: 65px; mix-blend-mode: multiply; margin-bottom: -5px; z-index: 2; position: relative;">
+                                <div style="z-index: 1; position: relative; background: transparent; text-align: center;">项目经理：<br><span class="en">(Project Manager)</span></div>
+                                <div style="margin-top: 10px; font-size: 11px; color: #666; font-weight: normal; text-align: left; width: 100%; border-top: 1px dashed #ccc; padding-top: 5px; font-family: 'Arial', sans-serif; line-height: 1.4;">
+                                    <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['manager'].time || 'Unknown'}<br>
+                                    <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['manager'].device || 'Unknown'}
+                                </div>
+                            </div>`;
                              foundAny = true;
                          }
                     }
                 });
                 
-                if(foundAny) alert('✅ 签名已成功刷新！可以打印或导出了。');
+                if(foundAny) alert('✅ 签名已成功刷新！设备型号与签字时间已同步。');
                 else alert('⏳ 还没有收到领导的签字记录呢。');
             }
         }).catch(err => alert('❌ 获取签名失败！错误详情：' + err.message));
