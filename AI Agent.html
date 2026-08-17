@@ -189,7 +189,7 @@
           border-radius: 4px;
         }
 
-        /* 🌟 新增：关闭按钮样式 🌟 */
+/* 🌟 新增：关闭按钮样式 🌟 */
         .zoom-close-btn {
           position: absolute;
           top: 20px;
@@ -207,6 +207,28 @@
           cursor: pointer;
           z-index: 100000;
           backdrop-filter: blur(8px);
+        }
+
+        /* 📱 主工作台：手机与平板专属响应式适配 */
+        @media screen and (max-width: 1024px) {
+            body { padding: 10px; }
+            .container { padding: 15px; margin: 0; width: 100%; box-sizing: border-box; }
+            .tabs { flex-wrap: wrap; gap: 5px; }
+            .tab-btn { flex: 1 1 auto; text-align: center; padding: 8px 10px; font-size: 14px; margin: 0; border-radius: 4px; }
+            .action-buttons { flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+            .action-buttons button, .action-buttons label { flex: 1 1 calc(50% - 8px); text-align: center; font-size: 13px; padding: 10px 5px; margin: 0; }
+            .table-responsive, .tab-content { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 15px; }
+            table { min-width: 800px; } 
+            td input { min-width: 50px; font-size: 13px; }
+            .exchange-rate-container { flex-direction: column; align-items: flex-start; gap: 10px; padding: 10px; }
+            .exchange-rate-container input { width: 80px; }
+            .drag-handle { display: none; }
+        }
+
+        @media screen and (max-width: 600px) {
+            .tab-btn { flex: 1 1 100%; } 
+            .action-buttons button, .action-buttons label { flex: 1 1 100%; } 
+            table { min-width: 1000px; } 
         }
 
     </style>
