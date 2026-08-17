@@ -10,14 +10,15 @@ CORS(app)
 
 DATA_FILE = 'approvals.json'
 
-# ==================== ⚙️ 网络代理配置 ====================
+# ==================== ⚙️ 网络代理配置 (完全保留你 server.py 的原始设置) ====================
 USE_PROXY = False
 PROXIES = {
     "http": "http://127.0.0.1:7890",
     "https": "http://127.0.0.1:7890"
 }
+# ====================================================================================
 
-# ==================== ⚙️ 本地数据存取 ====================
+# ==================== ⚙️ 本地数据存取 (审批流使用) ====================
 def load_data():
     if not os.path.exists(DATA_FILE):
         return {"current_form": None, "active_id": None}
@@ -122,11 +123,10 @@ def ai_ocr():
     print("\n" + "="*50)
     print("🔍 收到网页发来的图片，正在连接 Google AI (约旦直连模式)...")
 
-    # 🚨 核心修复：还原为你 server.py 中正确可用的最新 3.x 模型 🚨
+    # 🚨 核心修复：只保留当前官方绝对可用的识图大模型
     target_models = [
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-3.5-flash-lite"
+        "gemini-1.5-flash",
+        "gemini-1.5-pro"
     ]
 
     payload = {
@@ -141,7 +141,7 @@ def ai_ocr():
     
     headers = {"Content-Type": "application/json"}
     
-    # 🚨 核心修复：完全同步 server.py 的 60 秒配置与代理设置 🚨
+    # 🚨 核心修复：完全恢复你 server.py 中的 60 秒超时与代理设定 🚨
     kwargs = {
         "json": payload,
         "headers": headers,
@@ -179,9 +179,9 @@ def ai_ocr():
 
     return jsonify({"error": f"AI 模型匹配失败。\n最后报错: {last_error}"}), 400
 
+
 if __name__ == '__main__':
     print("="*50)
     print("🚀 最终修复版 AI 识图后台已启动！监听端口 5000...")
-    print(f"🌍 当前模式：海外/约旦 直连模型 (已切换为 gemini-3.6-flash)")
     print("="*50)
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
