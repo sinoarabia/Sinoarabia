@@ -410,7 +410,7 @@
                         <option value="USD">USD</option>
                         <option value="AED">AED</option>
                     </select>)<br>Price</th>
-                    <th width="10%">用途<br>Purpose</th>
+                    <th width="10%">备注<br>Remark</th>
                     <th width="5%" class="no-print">操作</th>
                 </tr>
             </thead>
@@ -425,7 +425,7 @@
             </tfoot>
         </table>
         <div class="add-row-container no-print">
-            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'], true)">+ 新增一行</button>
+            <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'], true)">+ 新增一行</button>
         </div>
         <div class="signature-area" id="sig_purchase">
             <div class="sig-row">
@@ -882,9 +882,10 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
                     let rows = pasteData.split(/\r\n|\n|\r/);
                     let currentTr = target.closest('tr');
 
+                    // 🚨 此处数组已彻底重置为备注(remark)，确保完美匹配HTML 🚨
                     let fieldsMap = {
                         'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-                        'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
+                        'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
                         'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
                         'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
                     };
@@ -1016,9 +1017,10 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
 
     function syncBusinessRows() {
         const targetCount = rowCounters.index;
+        // 🚨 同样彻底修复为 remark 🚨
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1314,9 +1316,10 @@ function autoFill(rowId, prefix, fields) {
 
     function refreshAllForms() {
         const prefixes = ['reim', 'purc', 'rect', 'issu'];
+        // 🚨 同样彻底修复为 remark 🚨
         const fieldMaps = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1542,9 +1545,10 @@ function autoFill(rowId, prefix, fields) {
         const thisYearSN = new Date().getFullYear() + "-001";
         
         const saved = localStorage.getItem('ccecc_jv_data_pro');
+        // 🚨 同样彻底修复为 remark 🚨
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
-            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'purpose'],
+            'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
             'rect': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD'],
             'issu': ['item', 'spec', 'category', 'unit', 'qty', 'priceJD', 'amountUSD']
         };
@@ -1946,7 +1950,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
         let purchaseDiv = document.getElementById('purchase');
         let cloneNode = purchaseDiv.cloneNode(true);
         
-        // 🚨 核心修复：先稳稳当当地把所有字填准，保证格子数量绝对一致！
+        // 🚨 核心修复点：严格先塞字，保证列数绝对一致
         let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
         let clonedInputs = cloneNode.querySelectorAll('input, textarea, select');
 
@@ -1970,7 +1974,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
             el.parentNode.replaceChild(span, el);
         });
 
-        // 🚨 核心修复：等所有字填完，再去删掉不要的列，彻底杜绝错位！
+        // 🚨 核心修复点：等字全稳妥塞进去后，再删废壳，从根源掐断阶梯错位！
         cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
 
         cloneNode.style.position = 'absolute';
@@ -2004,7 +2008,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 launchBtn.innerText = originalText;
                 launchBtn.disabled = false;
                 if(res.status === 'success') {
-                    // 🌟 核心修复：生成正确的审批页面链接，并自动复制
                     let approvalLink = window.location.origin + '/approve_page';
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(approvalLink).then(() => {
@@ -2052,7 +2055,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 const sigNodes = activeTab.querySelectorAll('.sig-item');
                 
                 sigNodes.forEach(node => {
-                    // 🌟 修复点 2：设置相对定位，让图片“悬浮盖章”，防止撑坏打印排版
                     node.style.position = 'relative'; 
 
                     if (node.innerText.includes('副经理')) {
@@ -2191,7 +2193,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
                 })
             });
 
-            // 🚨 核心修复：先拦截HTML报错网页，把真实HTTP错误码报给你，防止 JSON 解析卡死崩溃 🚨
             const contentType = response.headers.get("content-type");
             if (!response.ok && contentType && contentType.includes("text/html")) {
                 throw new Error(`服务器拒绝了请求 (HTTP状态码: ${response.status})。请排查：1. Nginx是否限制了上传大小(需配置 client_max_body_size 20M)；2. /api 路由是否正确指向了 Python 后台；3. 后台服务是否崩溃。`);

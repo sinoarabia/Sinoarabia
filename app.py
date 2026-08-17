@@ -26,14 +26,17 @@ def save_data(data):
 # ==================== 🌐 网页服务路由 ====================
 @app.route('/')
 def index():
-    return send_from_directory('.', 'AI Agent.html')
+    # 根目录默认打开 VIP 锁屏页
+    return send_from_directory('.', 'index.html')
 
 @app.route('/approve_page')
 def approve_page():
+    # 领导的手机审批页
     return send_from_directory('.', 'approve.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
+    # 处理跳转到 AI Agent.html 等其他静态文件请求
     return send_from_directory('.', path)
 
 # ==================== ✍️ 在线审批流接口 ====================
@@ -90,14 +93,12 @@ def ai_ocr():
     print("\n" + "="*50)
     print("🔍 收到网页发来的图片，正在连接 Google AI...")
 
-    # 模型池：恢复为你原本正确的 3.x 模型
     target_models = [
         "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-3.5-flash-lite"
     ]
 
-    # 恢复为你原本正确的驼峰命名参数
     payload = {
         "contents": [{
             "parts": [
@@ -142,7 +143,6 @@ def ai_ocr():
             print(f"❌ 连接失败: {last_error}")
 
     return jsonify({"error": f"AI 模型匹配失败。\n最后报错: {last_error}"}), 400
-
 
 if __name__ == '__main__':
     print("="*50)
