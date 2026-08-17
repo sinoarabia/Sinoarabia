@@ -424,15 +424,42 @@
                 </tr>
             </tfoot>
         </table>
-        <div class="add-row-container no-print">
+<div class="add-row-container no-print">
             <button class="add-row-btn" onclick="addBusinessRow('purc', ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'], true)">+ 新增一行</button>
         </div>
         <div class="signature-area" id="sig_purchase">
             <div class="sig-row">
-                <div class="sig-item">申请人：<br><span class="en">Prepared by:</span></div>
-                <div class="sig-item">成本经理：<br><span class="en">(Cost Manager)</span></div>
+                
+                <!-- 1. 申请人：固定长期保留 Allen.png -->
+                <div class="sig-item">
+                    <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; width: 100%;">
+                        <div style="text-align: right; white-space: nowrap;">
+                            <span style="font-size: 14px; font-weight: bold; color: #000;">申请人：</span><br>
+                            <span style="font-weight: normal; font-size: 12px; color: #333;">Prepared by:</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <img src="Allen.png" style="height: 55px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 2. 成本经理：固定长期保留 Mark.png -->
+                <div class="sig-item">
+                    <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; width: 100%;">
+                        <div style="text-align: right; white-space: nowrap;">
+                            <span style="font-size: 14px; font-weight: bold; color: #000;">成本经理：</span><br>
+                            <span style="font-weight: normal; font-size: 12px; color: #333;">(Cost Manager)</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <img src="Mark.png" style="height: 55px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 & 4. 副经理和项目经理（保持原样，留给系统的JS去动态刷新覆盖） -->
                 <div class="sig-item">项目副经理：<br><span class="en">(Deputy Project Manager)</span></div>
                 <div class="sig-item">项目经理：<br><span class="en">(Project Manager)</span></div>
+                
             </div>
         </div>
         <div class="boss-mark no-print">老板专属表格iiavatar</div>
