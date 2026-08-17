@@ -10,6 +10,13 @@ CORS(app)
 
 DATA_FILE = 'approvals.json'
 
+# ==================== ⚙️ 网络代理配置 ====================
+USE_PROXY = False
+PROXIES = {
+    "http": "http://127.0.0.1:7890",
+    "https": "http://127.0.0.1:7890"
+}
+
 # ==================== ⚙️ 本地数据存取 ====================
 def load_data():
     if not os.path.exists(DATA_FILE):
@@ -112,39 +119,69 @@ def ai_ocr():
     if not all([api_key, mime_type, base64_image, prompt_text]):
         return jsonify({"error": "缺少必要参数"}), 400
 
-    # 🚨 核心修复：直接剔除不支持图片的废柴 1.0 模型，只保留专业的视觉大模型
+    print("\n" + "="*50)
+    print("🔍 收到网页发来的图片，正在连接 Google AI (约旦直连模式)...")
+
+    # 🚨 核心修复：还原为你 server.py 中正确可用的最新 3.x 模型 🚨
     target_models = [
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite"
     ]
 
     payload = {
-        "contents": [{"parts": [{"text": prompt_text}, {"inlineData": {"mimeType": mime_type, "data": base64_image}}]}],
+        "contents": [{
+            "parts": [
+                {"text": prompt_text},
+                {"inlineData": {"mimeType": mime_type, "data": base64_image}}
+            ]
+        }],
         "generationConfig": {"temperature": 0.1}
     }
     
     headers = {"Content-Type": "application/json"}
     
-    # 🚨 核心修复：将超时放宽到 25 秒，给 AI 充足的读图时间，防止假死报错
-    kwargs = {"json": payload, "headers": headers, "timeout": 25}
+    # 🚨 核心修复：完全同步 server.py 的 60 秒配置与代理设置 🚨
+    kwargs = {
+        "json": payload,
+        "headers": headers,
+        "timeout": 60 
+    }
+    
+    if USE_PROXY:
+        kwargs["proxies"] = PROXIES
+        
     last_error = ""
 
     for model in target_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        print(f"▶️ 正在调用 AI 识图模型: {model} ...")
+        
         try:
             response = requests.post(url, **kwargs)
             result = response.json()
+            
             if response.status_code == 200 and "candidates" in result:
                 ai_text = result["candidates"][0]["content"]["parts"][0]["text"]
+                print(f"🎉 识别成功！所用模型: {model}")
                 return jsonify({"result": ai_text, "model_used": model}), 200
             else:
-                last_error = result.get("error", {}).get("message", "接口未返回正确结果")
+                err_msg = result.get("error", {}).get("message", "接口未返回正确结果")
+                print(f"❌ {model} 响应异常: {err_msg}")
+                last_error = f"{model}: {err_msg}"
+                
         except requests.exceptions.Timeout:
-            last_error = f"{model} 请求超时 (请检查服务器端连接 Google 接口的网络状况)"
+            last_error = f"{model} 请求超时 (60秒)"
+            print(f"⚠️ {last_error}")
         except Exception as e:
             last_error = str(e)
+            print(f"❌ 连接失败: {last_error}")
 
     return jsonify({"error": f"AI 模型匹配失败。\n最后报错: {last_error}"}), 400
 
 if __name__ == '__main__':
+    print("="*50)
+    print("🚀 最终修复版 AI 识图后台已启动！监听端口 5000...")
+    print(f"🌍 当前模式：海外/约旦 直连模型 (已切换为 gemini-3.6-flash)")
+    print("="*50)
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
