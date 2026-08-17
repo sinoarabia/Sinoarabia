@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>单据在线生成管理系统，别躺平，要有追求。</title>
+    <title>单据在线生成管理系统</title>
     <!-- 引入强大的带样式支持的 Excel 导出引擎 -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <!-- 🌟 新增：引入高清截图引擎 html2canvas 🌟 -->
@@ -1275,10 +1275,16 @@ function recalculateAll() {
             const amountEl = document.getElementById(`idx_amountUSD_${i}`);
             
             if (amountEl) {
-                // 🌟 新增：如果索引里手动填了 PBD 或 BPD，直接保留，跳过数字检查
-                let currentVal = amountEl.value.trim();
-                let currentValUpper = currentVal.toUpperCase();
-                if (currentValUpper === 'PBD' || currentValUpper === 'BPD') {
+                // 🌟 终极固定版：精准捕获 TBC，统一转为大写 TBC
+                let currentAmtVal = amountEl.value.trim().toUpperCase();
+                let currentPriceVal = priceEl ? priceEl.value.trim().toUpperCase() : '';
+                let specialWords = ['TBC', 'PBD', 'BPD', 'BDP', 'TBD'];
+                
+                let matchedWord = specialWords.includes(currentAmtVal) ? currentAmtVal : (specialWords.includes(currentPriceVal) ? currentPriceVal : null);
+
+                if (matchedWord) {
+                    // 如果识别到 TBC，就强制输出 TBC；否则向下兼容输出 BPD
+                    amountEl.value = (matchedWord === 'TBC') ? 'TBC' : 'BPD'; 
                     amountEl.style.color = '';
                     amountEl.style.fontWeight = 'bold';
                     amountEl.title = '';
@@ -1350,10 +1356,14 @@ function autoFill(rowId, prefix, fields) {
                 if (field === 'amountUSD') {
                     let finalAmount = '';
                     let rawAmountStr = record ? String(record['amountUSD']).trim().toUpperCase() : '';
+                    let rawPriceStr = record ? String(record['priceJD']).trim().toUpperCase() : '';
+                    let specialWords = ['TBC', 'PBD', 'BPD', 'BDP', 'TBD'];
                     
-                    // 🌟 新增：如果索引价格是 PBD 或 BPD，采购单自动填入 BPD
-                    if (rawAmountStr === 'PBD' || rawAmountStr === 'BPD') {
-                        finalAmount = 'BPD';
+                    let matchedWord = specialWords.includes(rawAmountStr) ? rawAmountStr : (specialWords.includes(rawPriceStr) ? rawPriceStr : null);
+
+                    if (matchedWord) {
+                        // 同步到采购单时，精准映射 TBC
+                        finalAmount = (matchedWord === 'TBC') ? 'TBC' : 'BPD';
                     } else if (record && record['amountUSD'] && !isNaN(parseFloat(record['amountUSD']))) {
                         const rawAmount = parseFloat(record['amountUSD']);
                         const idxCurrency = document.getElementById('idx_currency').value;
@@ -1405,7 +1415,9 @@ function calculateTotal(prefix) {
         let totalPreTax = 0;
         let totalTax = 0;
         let totalAtt = 0;
-        let hasBPD = false; // 🌟 新增：追踪整张表里是否包含 BPD
+        let hasSpecial = false; 
+        let specialDisplay = 'BPD'; 
+        let specialWords = ['TBC', 'PBD', 'BPD', 'BDP', 'TBD']; 
         
         for (let i = 1; i <= rowCounters[prefix]; i++) {
             let currentAmt = 0, currentPreTax = 0, currentTax = 0; 
@@ -1413,9 +1425,11 @@ function calculateTotal(prefix) {
             const amtEl = document.getElementById(`${prefix}_amountUSD_${i}`);
             if (amtEl && amtEl.value) {
                 let valStr = String(amtEl.value).trim().toUpperCase();
-                // 🌟 新增：检查该行是否为 BPD/PBD
-                if (valStr === 'BPD' || valStr === 'PBD') {
-                    hasBPD = true;
+                
+                if (specialWords.includes(valStr)) {
+                    hasSpecial = true;
+                    // 如果单据里出现了 TBC，总计栏强制显示为 TBC
+                    if (valStr === 'TBC') specialDisplay = 'TBC';
                 } else {
                     const val = parseFloat(amtEl.value);
                     if (!isNaN(val)) {
@@ -1452,8 +1466,7 @@ function calculateTotal(prefix) {
                 
                 if (amtEl) {
                     let valStr = String(amtEl.value).trim().toUpperCase();
-                    // 🌟 如果这行是 BPD，跳过每行的红框错误警告
-                    if (valStr !== 'BPD' && valStr !== 'PBD') {
+                    if (!specialWords.includes(valStr)) {
                         if (currentPreTax + currentTax !== currentAmt) {
                             amtEl.style.color = '#dc3545'; 
                             amtEl.style.backgroundColor = '#ffeeba'; 
@@ -1490,9 +1503,8 @@ function calculateTotal(prefix) {
             const sumAmtEl = document.getElementById(prefix + '_total_amt');
             
             if (sumAmtEl) {
-                // 🌟 新增：只要列表里包含 BPD，总额就强制显示 BPD
-                if (hasBPD) {
-                    sumAmtEl.innerText = 'BPD';
+                if (hasSpecial) {
+                    sumAmtEl.innerText = specialDisplay;
                     sumAmtEl.style.color = '';
                     sumAmtEl.style.fontWeight = 'bold';
                     sumAmtEl.title = '';
@@ -1517,9 +1529,8 @@ function calculateTotal(prefix) {
         } else {
             const sumAmtEl = document.getElementById(prefix + '_total_amt');
             if (sumAmtEl) {
-                // 🌟 新增：只要列表里包含 BPD，总额就强制显示 BPD
-                if (hasBPD) {
-                    sumAmtEl.innerText = 'BPD';
+                if (hasSpecial) {
+                    sumAmtEl.innerText = specialDisplay;
                     sumAmtEl.style.color = '';
                     sumAmtEl.title = '';
                 } else {
