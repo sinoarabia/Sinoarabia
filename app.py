@@ -43,7 +43,6 @@ def submit_approval():
     req = request.get_json() or {}
     html_content = req.get('html_content', '')
     
-    # 🌟 优化1：每次生成唯一的专属 ID
     doc_id = uuid.uuid4().hex[:10]
     
     data = {
@@ -58,7 +57,6 @@ def submit_approval():
     }
     save_data(data)
     
-    # 返回拼接好的唯一链接
     approval_url = f"{request.host_url.rstrip('/')}/approve_page?id={doc_id}"
     return jsonify({"status": "success", "approval_url": approval_url})
 
@@ -67,13 +65,11 @@ def pending_list():
     req_id = request.args.get('id')
     data = load_data()
     
-    # 如果手机端带了 ID 来请求，校验链接是否已过期
     if req_id:
         if data.get("active_id") != req_id:
             return jsonify({"expired": True})
         return jsonify({"current_form": data.get("current_form")})
     
-    # 电脑端刷新签名时，不需要校验ID，直接拉取最新表单
     return jsonify({"current_form": data.get("current_form")})
 
 @app.route('/api/sign', methods=['POST'])
@@ -89,14 +85,12 @@ def sign():
     if not data.get("current_form"):
         return jsonify({"status": "error", "error": "当前没有审批单"}), 400
         
-    # 校验签字提交时的链接是否仍然有效
     if doc_id and data.get("active_id") != doc_id:
         return jsonify({"status": "error", "error": "该链接已失效"}), 400
     
     if "signatures" not in data["current_form"]:
         data["current_form"]["signatures"] = {"deputy": None, "manager": None}
     
-    # 🌟 优化3：同时保存签名图、签字时间、设备型号
     data["current_form"]["signatures"][role] = {
         "url": sig_url,
         "time": sign_time,
@@ -118,10 +112,10 @@ def ai_ocr():
     if not all([api_key, mime_type, base64_image, prompt_text]):
         return jsonify({"error": "缺少必要参数"}), 400
 
+    # 🚨 核心修复：直接剔除不支持图片的废柴 1.0 模型，只保留专业的视觉大模型
     target_models = [
         "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-1.0-pro"
+        "gemini-1.5-pro"
     ]
 
     payload = {
@@ -130,7 +124,9 @@ def ai_ocr():
     }
     
     headers = {"Content-Type": "application/json"}
-    kwargs = {"json": payload, "headers": headers, "timeout": 20}
+    
+    # 🚨 核心修复：将超时放宽到 25 秒，给 AI 充足的读图时间，防止假死报错
+    kwargs = {"json": payload, "headers": headers, "timeout": 25}
     last_error = ""
 
     for model in target_models:
@@ -144,7 +140,7 @@ def ai_ocr():
             else:
                 last_error = result.get("error", {}).get("message", "接口未返回正确结果")
         except requests.exceptions.Timeout:
-            last_error = f"{model} 请求超时"
+            last_error = f"{model} 请求超时 (请检查服务器端连接 Google 接口的网络状况)"
         except Exception as e:
             last_error = str(e)
 
