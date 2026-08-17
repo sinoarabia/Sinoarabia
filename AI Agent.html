@@ -2054,16 +2054,23 @@ function loadLanSignatures() {
                 const sigNodes = activeTab.querySelectorAll('.sig-item');
                 
                 sigNodes.forEach(node => {
-                    // 🌟 核心优化：采用Flex布局，签字悬浮上方，时间设备左对齐靠下，完美规避排版错乱
+                    // 🌟 完美按照批注图修改：采用左右横向 Flex 布局
                     if (node.innerText.includes('副经理')) {
                         if (sigs['deputy'] && sigs['deputy'].url) {
                             node.innerHTML = `
-                            <div style="display: flex; flex-direction: column; align-items: center; position: relative; width: 100%;">
-                                <img src="${sigs['deputy'].url}" style="height: 65px; mix-blend-mode: multiply; margin-bottom: -5px; z-index: 2; position: relative;">
-                                <div style="z-index: 1; position: relative; background: transparent; text-align: center;">项目副经理：<br><span class="en">(Deputy Project Manager)</span></div>
-                                <div style="margin-top: 10px; font-size: 11px; color: #666; font-weight: normal; text-align: left; width: 100%; border-top: 1px dashed #ccc; padding-top: 5px; font-family: 'Arial', sans-serif; line-height: 1.4;">
-                                    <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['deputy'].time || 'Unknown'}<br>
-                                    <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['deputy'].device || 'Unknown'}
+                            <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; width: 100%;">
+                                <!-- 左侧：头衔 -->
+                                <div style="text-align: right; white-space: nowrap;">
+                                    <span style="font-size: 14px; font-weight: bold; color: #000;">项目副经理：</span><br>
+                                    <span style="font-weight: normal; font-size: 12px; color: #333;">(Deputy Project Manager)</span>
+                                </div>
+                                <!-- 右侧：签名与设备信息，内部左对齐 -->
+                                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-top: -15px;">
+                                    <img src="${sigs['deputy'].url}" style="height: 55px; mix-blend-mode: multiply; margin-left: -5px; z-index: 2;">
+                                    <div style="margin-top: 2px; font-size: 11px; color: #555; font-weight: normal; text-align: left; font-family: 'Arial', sans-serif; line-height: 1.4;">
+                                        <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['deputy'].time || 'Unknown'}<br>
+                                        <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['deputy'].device || 'Unknown'}
+                                    </div>
                                 </div>
                             </div>`;
                             foundAny = true;
@@ -2072,12 +2079,19 @@ function loadLanSignatures() {
                     if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
                          if (sigs['manager'] && sigs['manager'].url) {
                              node.innerHTML = `
-                             <div style="display: flex; flex-direction: column; align-items: center; position: relative; width: 100%;">
-                                <img src="${sigs['manager'].url}" style="height: 65px; mix-blend-mode: multiply; margin-bottom: -5px; z-index: 2; position: relative;">
-                                <div style="z-index: 1; position: relative; background: transparent; text-align: center;">项目经理：<br><span class="en">(Project Manager)</span></div>
-                                <div style="margin-top: 10px; font-size: 11px; color: #666; font-weight: normal; text-align: left; width: 100%; border-top: 1px dashed #ccc; padding-top: 5px; font-family: 'Arial', sans-serif; line-height: 1.4;">
-                                    <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['manager'].time || 'Unknown'}<br>
-                                    <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['manager'].device || 'Unknown'}
+                             <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; width: 100%;">
+                                <!-- 左侧：头衔 -->
+                                <div style="text-align: right; white-space: nowrap;">
+                                    <span style="font-size: 14px; font-weight: bold; color: #000;">项目经理：</span><br>
+                                    <span style="font-weight: normal; font-size: 12px; color: #333;">(Project Manager)</span>
+                                </div>
+                                <!-- 右侧：签名与设备信息，内部左对齐 -->
+                                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-top: -15px;">
+                                    <img src="${sigs['manager'].url}" style="height: 55px; mix-blend-mode: multiply; margin-left: -5px; z-index: 2;">
+                                    <div style="margin-top: 2px; font-size: 11px; color: #555; font-weight: normal; text-align: left; font-family: 'Arial', sans-serif; line-height: 1.4;">
+                                        <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['manager'].time || 'Unknown'}<br>
+                                        <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['manager'].device || 'Unknown'}
+                                    </div>
                                 </div>
                             </div>`;
                              foundAny = true;
@@ -2085,7 +2099,7 @@ function loadLanSignatures() {
                     }
                 });
                 
-                if(foundAny) alert('✅ 签名已成功刷新！设备型号与签字时间已同步。');
+                if(foundAny) alert('✅ 签名已成功刷新！排版已完美对齐。');
                 else alert('⏳ 还没有收到领导的签字记录呢。');
             }
         }).catch(err => alert('❌ 获取签名失败！错误详情：' + err.message));
