@@ -118,40 +118,56 @@
         .api-save-btn:hover { background-color: #218838; }
         .api-link-btn { padding: 8px 15px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        @media print {
-            @page { size: A4 landscape; margin: 8mm; }
-            body { margin: 0; background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            
-            .no-print, .resizer, .header-nav, .global-rate-box, .add-row-container, .bottom-ai-config { display: none !important; }
-            
-            .container { box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; min-height: auto !important; }
-            
-            .doc-title { margin-bottom: 10px !important; }
-            
-            .input-cell, .readonly-cell, .flex-textarea, .title-h2, .title-h3 { 
-                border: none !important; background: transparent !important; box-shadow: none !important; width: 100% !important; 
-                padding: 0 !important; margin: 0 !important; outline: none !important; resize: none !important; 
-                overflow: visible !important; white-space: pre-wrap !important; color: #000 !important;
-            }
-            .title-h2 { font-size: 20px !important; font-weight: bold !important; margin: 5px 0 !important;}
-            .title-h3 { font-size: 14px !important; margin: 0 !important;}
+@media print {
+    @page { size: A4 landscape; margin: 8mm; }
+    body { margin: 0; background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-            .currency-select { border: none !important; appearance: none !important; -webkit-appearance: none !important; background: transparent !important; padding: 0 !important; color: #000 !important; font-weight: bold; }
-            .title-input { border-bottom: none !important; color: #000 !important; }
-            .header-info input { color: #000 !important; border-bottom: 1px solid #000 !important; }
+    .no-print, .resizer, .header-nav, .global-rate-box, .add-row-container, .bottom-ai-config { display: none !important; }
 
-            input::-webkit-calendar-picker-indicator { display: none !important; -webkit-appearance: none; }
-            input::-webkit-inner-spin-button { display: none !important; }
+    .container { box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; min-height: auto !important; }
 
-            table { width: 100% !important; border-collapse: collapse; margin-top: 5px; font-size: 13px !important; }
-            tr { page-break-inside: avoid; } 
-            thead { display: table-header-group; }
-            tfoot { display: table-row-group; }
-            th, td { border: 1px solid #000 !important; padding: 3px 2px !important; color: #000 !important; word-wrap: break-word; }
-            
-            .signature-area { page-break-inside: avoid; margin-top: 15px !important; }
-            .sig-row { margin-bottom: 15px !important; }
-        }
+    .doc-title { margin-bottom: 10px !important; }
+
+    /* 🌟 核心修复1：剥离 input 和 textarea，给所有 input 加上 min-width: 0 !important 
+       这样超长文本就不会在打印时强行撑爆列宽，超出部分会自动隐藏并显示省略号 */
+    .input-cell, .readonly-cell {
+        border: none !important; background: transparent !important; box-shadow: none !important;
+        width: 100% !important; min-width: 0 !important; box-sizing: border-box !important;
+        padding: 0 !important; margin: 0 !important; outline: none !important;
+        overflow: hidden !important; text-overflow: ellipsis !important; color: #000 !important;
+    }
+
+    /* 保持原有的 textarea 和 标题 完全展开，支持多行打印 */
+    .flex-textarea, .title-h2, .title-h3 {
+        border: none !important; background: transparent !important; box-shadow: none !important;
+        width: 100% !important; min-width: 0 !important; box-sizing: border-box !important;
+        padding: 0 !important; margin: 0 !important; outline: none !important; resize: none !important;
+        overflow: visible !important; white-space: pre-wrap !important; color: #000 !important;
+    }
+
+    .title-h2 { font-size: 20px !important; font-weight: bold !important; margin: 5px 0 !important;}
+    .title-h3 { font-size: 14px !important; margin: 0 !important;}
+
+    .currency-select { border: none !important; appearance: none !important; -webkit-appearance: none !important; background: transparent !important; padding: 0 !important; color: #000 !important; font-weight: bold; }
+    .title-input { border-bottom: none !important; color: #000 !important; }
+    .header-info input { color: #000 !important; border-bottom: 1px solid #000 !important; }
+
+    input::-webkit-calendar-picker-indicator { display: none !important; -webkit-appearance: none; }
+    input::-webkit-inner-spin-button { display: none !important; }
+
+    /* 🌟 核心修复2：增加 table-layout: fixed !important 
+       让打印引擎绝对服从表头 <th> 设定的百分比宽度，绝不根据内容长短自动乱调 */
+    table { width: 100% !important; border-collapse: collapse; margin-top: 5px; font-size: 13px !important; table-layout: fixed !important; word-wrap: break-word !important; }
+    tr { page-break-inside: avoid; }
+    thead { display: table-header-group; }
+    tfoot { display: table-row-group; }
+    
+    /* 修复表头和普通单元格的长单词强制换行规则 */
+    th, td { border: 1px solid #000 !important; padding: 3px 2px !important; color: #000 !important; word-wrap: break-word !important; word-break: break-word !important; }
+
+    .signature-area { page-break-inside: avoid; margin-top: 15px !important; }
+    .sig-row { margin-bottom: 15px !important; }
+}
     
         /* 🌟 新增：遮罩层背景样式 🌟 */
         .zoom-overlay {
