@@ -149,7 +149,6 @@
         let dpdSigned = false, pdSigned = false;
         let padDpd = null, padPd = null;
         
-        // 解析 URL 中的唯一 ID
         const urlParams = new URLSearchParams(window.location.search);
         const docId = urlParams.get('id');
 
@@ -174,11 +173,10 @@
             window.addEventListener('resize', resizeCanvases);
             resizeCanvases();
 
-            // 携带 ID 发起请求，校验是否过期
+            // 首次加载数据
             fetch(`/api/pending_list?id=${docId || ''}`)
             .then(res => res.json())
             .then(data => {
-                // 如果链接已失效或者无数据，锁屏
                 if(data.expired || !data.current_form) {
                     document.getElementById('lock_screen').style.display = 'flex';
                     document.getElementById('main_app').style.display = 'none';
@@ -201,11 +199,39 @@
                         lockPad('dpd', data.current_form.signatures.deputy.url);
                     }
                 }
+                
+                // 🌟 核心新功能：启动每 2 秒一次的静默轮询 🌟
+                setInterval(pollSignatureStatus, 2000);
             })
             .catch(err => {
                 document.getElementById('loading_text').innerText = "Load failed. Please check network.";
             });
         });
+
+        // 🌟 新增的后台静默轮询函数 🌟
+        function pollSignatureStatus() {
+            fetch(`/api/pending_list?id=${docId || ''}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.expired || !data.current_form) return;
+                
+                // 如果轮询期间发现项目经理(PD)已经签完，直接锁屏结束
+                if(data.current_form.signatures && data.current_form.signatures.manager) {
+                    document.getElementById('lock_screen').style.display = 'flex';
+                    document.getElementById('main_app').style.display = 'none';
+                    return; 
+                }
+                
+                // 关键点：如果后台发现副经理(DPD)签了，且本地还没更新(dpdSigned是false)
+                //立刻调用 lockPad，它会自动撤掉 PD 的遮罩层并启用按钮！
+                if(data.current_form.signatures && data.current_form.signatures.deputy && !dpdSigned) {
+                    lockPad('dpd', data.current_form.signatures.deputy.url);
+                }
+            })
+            .catch(err => {
+                // 静默失败，网络闪断时不干扰用户
+            });
+        }
 
         function lockPad(role, dataUrl) {
             document.getElementById(`canvas-${role}`).style.display = 'none';
@@ -221,9 +247,9 @@
             if(role === 'dpd') {
                 dpdSigned = true;
                 let pdOverlay = document.getElementById('pd-lock-overlay');
-                if (pdOverlay) pdOverlay.style.display = 'none';
-                document.getElementById('btn-clear-pd').disabled = false;
-                document.getElementById('btn-submit-pd').disabled = false;
+                if (pdOverlay) pdOverlay.style.display = 'none'; // 撤除遮罩层
+                document.getElementById('btn-clear-pd').disabled = false; // 解锁按钮
+                document.getElementById('btn-submit-pd').disabled = false; // 解锁按钮
             }
             if(role === 'pd') pdSigned = true;
 
@@ -237,7 +263,6 @@
             document.getElementById('preview_stamps').innerHTML = html;
         }
 
-        // 获取设备型号
         function getDeviceType() {
             const ua = navigator.userAgent;
             if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "Tablet";
@@ -252,7 +277,6 @@
             return "Web Browser";
         }
 
-        // 获取当前时间字符串
         function getCurrentTimeStr() {
             const now = new Date();
             const pad = (n) => n.toString().padStart(2, '0');
@@ -275,7 +299,6 @@
             btnSave.innerHTML = 'Submitting...<br><span>جاري الإرسال...</span>';
             btnSave.disabled = true;
 
-            // 🌟 携带时间、设备和 ID 发给后台
             fetch('/api/sign', {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
@@ -306,6 +329,7 @@
             });
         }
 
+        // ---------- 高清图片缩放逻辑 ----------
         let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
         let initialDistance = null, isDragging = false, isPinching = false; 
 
