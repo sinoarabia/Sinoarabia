@@ -123,10 +123,11 @@ def ai_ocr():
     print("\n" + "="*50)
     print("🔍 收到网页发来的图片，正在连接 Google AI (约旦直连模式)...")
 
-    # 🚨 核心修复：只保留当前官方绝对可用的识图大模型
+    # 🚨 核心修复：完全恢复你 server.py 中的最新模型列表 🚨
     target_models = [
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite"
     ]
 
     payload = {
