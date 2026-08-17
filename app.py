@@ -26,17 +26,14 @@ def save_data(data):
 # ==================== 🌐 网页服务路由 ====================
 @app.route('/')
 def index():
-    # 根目录默认打开 VIP 锁屏页
     return send_from_directory('.', 'index.html')
 
 @app.route('/approve_page')
 def approve_page():
-    # 领导的手机审批页
     return send_from_directory('.', 'approve.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    # 处理跳转到 AI Agent.html 等其他静态文件请求
     return send_from_directory('.', path)
 
 # ==================== ✍️ 在线审批流接口 ====================
@@ -93,10 +90,11 @@ def ai_ocr():
     print("\n" + "="*50)
     print("🔍 收到网页发来的图片，正在连接 Google AI...")
 
+    # 🚨 核心修复：移除幻觉模型，恢复谷歌真实的 API 模型名称 🚨
     target_models = [
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-3.5-flash-lite"
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-1.0-pro"
     ]
 
     payload = {
@@ -110,10 +108,12 @@ def ai_ocr():
     }
     
     headers = {"Content-Type": "application/json"}
+    
+    # 🚨 核心修复：把 timeout 缩短为 20，避免 Gunicorn 在 30 秒时强制杀死进程引发 502 Bad Gateway 🚨
     kwargs = {
         "json": payload,
         "headers": headers,
-        "timeout": 60 
+        "timeout": 20 
     }
     
     last_error = ""
@@ -136,7 +136,7 @@ def ai_ocr():
                 last_error = f"{model}: {err_msg}"
                 
         except requests.exceptions.Timeout:
-            last_error = f"{model} 请求超时 (60秒)"
+            last_error = f"{model} 请求超时 (20秒被拦截，防止了 502 崩溃)"
             print(f"⚠️ {last_error}")
         except Exception as e:
             last_error = str(e)

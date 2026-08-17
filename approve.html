@@ -148,7 +148,7 @@
         </div>
     </div>
 
-    <!-- 🚨 致命错误已彻底修复：将原有的残缺标签组合成了一个完整、健康的 script 块 🚨 -->
+    <!-- 🚨 致命错误彻底修复：确保 script 标签闭合，手机端终于复活 🚨 -->
     <script>
         let dpdSigned = false, pdSigned = false;
         let padDpd = null, padPd = null;
@@ -269,7 +269,7 @@
             });
         }
 
-        // 🌟 图片缩放手势交互核心代码 (带防双击误判) 🌟
+        // 🌟 图片缩放手势交互核心代码 🌟
         let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
         let initialDistance = null, isDragging = false;
         let isPinching = false; 
@@ -281,7 +281,7 @@
         function openZoomModal(src) {
           zoomImg.src = src;
           overlay.style.display = 'flex';
-          document.body.style.overflow = 'hidden'; // 禁止底页滚动
+          document.body.style.overflow = 'hidden'; 
           resetTransform();
         }
 
@@ -306,7 +306,6 @@
           zoomImg.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
         }
 
-        // 计算双指间距
         function getDistance(touches) {
           return Math.hypot(
             touches[0].clientX - touches[1].clientX,
@@ -314,7 +313,6 @@
           );
         }
 
-        // 触摸事件监听
         wrapper.addEventListener('touchstart', (e) => {
           if (e.touches.length === 1) {
             isDragging = true;
@@ -322,7 +320,7 @@
             startY = e.touches[0].clientY - posY;
           } else if (e.touches.length === 2) {
             isDragging = false;
-            isPinching = true; // 记录：进入了双指放大模式
+            isPinching = true; 
             initialDistance = getDistance(e.touches);
             lastScale = scale;
           }
@@ -337,7 +335,7 @@
           } else if (e.touches.length === 2 && initialDistance) {
             const currentDist = getDistance(e.touches);
             const newScale = lastScale * (currentDist / initialDistance);
-            scale = Math.min(Math.max(newScale, 1), 4); // 限制缩放 1x 到 4x
+            scale = Math.min(Math.max(newScale, 1), 4); 
             updateTransform();
           }
         }, { passive: false });
@@ -352,10 +350,9 @@
                 resetTransform();
             }
 
-            // 🌟 核心拦截逻辑：如果是刚刚完成捏合松手，直接强行打断，绝不触发下方的双击还原！
             if (isPinching) {
                 isPinching = false;
-                lastTap = 0; // 清空双击计时器
+                lastTap = 0; 
                 return; 
             }
 

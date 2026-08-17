@@ -882,7 +882,7 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
                     let rows = pasteData.split(/\r\n|\n|\r/);
                     let currentTr = target.closest('tr');
 
-                    // 🚨 此处数组已彻底重置为备注(remark)，确保完美匹配HTML 🚨
+                    // 🚨 彻底修复：严格校准为 remark 🚨
                     let fieldsMap = {
                         'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
                         'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
@@ -1316,7 +1316,7 @@ function autoFill(rowId, prefix, fields) {
 
     function refreshAllForms() {
         const prefixes = ['reim', 'purc', 'rect', 'issu'];
-        // 🚨 同样彻底修复为 remark 🚨
+        // 🚨 彻底修复：严格校准为 remark 🚨
         const fieldMaps = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
             'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
@@ -1545,7 +1545,7 @@ function autoFill(rowId, prefix, fields) {
         const thisYearSN = new Date().getFullYear() + "-001";
         
         const saved = localStorage.getItem('ccecc_jv_data_pro');
-        // 🚨 同样彻底修复为 remark 🚨
+        // 🚨 彻底修复：严格校准为 remark 🚨
         const fieldsMap = {
             'reim': ['date', 'attachment', 'item', 'preTaxUSD', 'taxUSD', 'amountUSD', 'costCenter'],
             'purc': ['item', 'spec', 'unit', 'qty', 'amountUSD', 'remark'],
@@ -1950,7 +1950,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
         let purchaseDiv = document.getElementById('purchase');
         let cloneNode = purchaseDiv.cloneNode(true);
         
-        // 🚨 核心修复点：严格先塞字，保证列数绝对一致
+        // 🚨 核心修复：坚决不提前删除壳子，保证提取数据前后的一一对应
         let originalInputs = purchaseDiv.querySelectorAll('input, textarea, select');
         let clonedInputs = cloneNode.querySelectorAll('input, textarea, select');
 
@@ -1974,7 +1974,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
             el.parentNode.replaceChild(span, el);
         });
 
-        // 🚨 核心修复点：等字全稳妥塞进去后，再删废壳，从根源掐断阶梯错位！
+        // 🚨 核心修复：数据填完且对齐后，再删除废壳，绝对不会再有阶梯错位
         cloneNode.querySelectorAll('.no-print, .add-row-container, .boss-mark, .signature-area').forEach(el => el.remove());
 
         cloneNode.style.position = 'absolute';
@@ -2123,7 +2123,9 @@ function initDefaultDemo(todayStr, thisYearSN) {
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
                     let width = img.width, height = img.height;
-                    const maxDim = 2048; 
+                    
+                    // 🚨 核心修复：缩小上传像素限制到 1200，极大缩短传输时间，杜绝 Gunicorn 等太久而抛出 502 🚨
+                    const maxDim = 1200; 
                     
                     if (width > height && width > maxDim) {
                         height *= maxDim / width; width = maxDim;
@@ -2258,7 +2260,6 @@ function initDefaultDemo(todayStr, thisYearSN) {
 </script>
 <!-- 生成专属链接弹窗工具 -->
 <script>
-    // 🌟 新增：图片缩放手势交互核心代码 (带防双击误判) 🌟
     let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;
     let initialDistance = null, isDragging = false;
     let isPinching = false; 
