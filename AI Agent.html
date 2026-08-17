@@ -1262,7 +1262,7 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
         return null;
     }
 
-    function recalculateAll() {
+function recalculateAll() {
         const rate = parseFloat(document.getElementById('global_rate').value) || 0.708;
         const currencyEl = document.getElementById('idx_currency');
         const idxCurrency = currencyEl.value;
@@ -1275,6 +1275,16 @@ const indexFields = ['date', 'sn', 'attachment', 'item', 'spec', 'category', 'un
             const amountEl = document.getElementById(`idx_amountUSD_${i}`);
             
             if (amountEl) {
+                // 🌟 新增：如果索引里手动填了 PBD 或 BPD，直接保留，跳过数字检查
+                let currentVal = amountEl.value.trim();
+                let currentValUpper = currentVal.toUpperCase();
+                if (currentValUpper === 'PBD' || currentValUpper === 'BPD') {
+                    amountEl.style.color = '';
+                    amountEl.style.fontWeight = 'bold';
+                    amountEl.title = '';
+                    continue; 
+                }
+
                 let expectedAmount = null;
                 let preTaxStr = preTaxEl ? preTaxEl.value.trim() : '';
                 let taxStr = taxEl ? taxEl.value.trim() : '';
@@ -1339,7 +1349,12 @@ function autoFill(rowId, prefix, fields) {
             if (el) {
                 if (field === 'amountUSD') {
                     let finalAmount = '';
-                    if (record && record['amountUSD'] && !isNaN(parseFloat(record['amountUSD']))) {
+                    let rawAmountStr = record ? String(record['amountUSD']).trim().toUpperCase() : '';
+                    
+                    // 🌟 新增：如果索引价格是 PBD 或 BPD，采购单自动填入 BPD
+                    if (rawAmountStr === 'PBD' || rawAmountStr === 'BPD') {
+                        finalAmount = 'BPD';
+                    } else if (record && record['amountUSD'] && !isNaN(parseFloat(record['amountUSD']))) {
                         const rawAmount = parseFloat(record['amountUSD']);
                         const idxCurrency = document.getElementById('idx_currency').value;
                         let baseJD = (idxCurrency === 'USD') ? (rawAmount * rate) : rawAmount;
@@ -1385,21 +1400,28 @@ function autoFill(rowId, prefix, fields) {
         if(!isInitializing) saveDataToLocal(); 
     }
 
-    function calculateTotal(prefix) {
+function calculateTotal(prefix) {
         let totalAmt = 0;
         let totalPreTax = 0;
         let totalTax = 0;
         let totalAtt = 0;
+        let hasBPD = false; // 🌟 新增：追踪整张表里是否包含 BPD
         
         for (let i = 1; i <= rowCounters[prefix]; i++) {
             let currentAmt = 0, currentPreTax = 0, currentTax = 0; 
             
             const amtEl = document.getElementById(`${prefix}_amountUSD_${i}`);
             if (amtEl && amtEl.value) {
-                const val = parseFloat(amtEl.value);
-                if (!isNaN(val)) {
-                    currentAmt = Math.round(val * 1000);
-                    totalAmt += currentAmt;
+                let valStr = String(amtEl.value).trim().toUpperCase();
+                // 🌟 新增：检查该行是否为 BPD/PBD
+                if (valStr === 'BPD' || valStr === 'PBD') {
+                    hasBPD = true;
+                } else {
+                    const val = parseFloat(amtEl.value);
+                    if (!isNaN(val)) {
+                        currentAmt = Math.round(val * 1000);
+                        totalAmt += currentAmt;
+                    }
                 }
             }
 
@@ -1429,10 +1451,18 @@ function autoFill(rowId, prefix, fields) {
                 }
                 
                 if (amtEl) {
-                    if (currentPreTax + currentTax !== currentAmt) {
-                        amtEl.style.color = '#dc3545'; 
-                        amtEl.style.backgroundColor = '#ffeeba'; 
-                        amtEl.title = '错误：该行的 税前金额 + 税费 ≠ 含税金额';
+                    let valStr = String(amtEl.value).trim().toUpperCase();
+                    // 🌟 如果这行是 BPD，跳过每行的红框错误警告
+                    if (valStr !== 'BPD' && valStr !== 'PBD') {
+                        if (currentPreTax + currentTax !== currentAmt) {
+                            amtEl.style.color = '#dc3545'; 
+                            amtEl.style.backgroundColor = '#ffeeba'; 
+                            amtEl.title = '错误：该行的 税前金额 + 税费 ≠ 含税金额';
+                        } else {
+                            amtEl.style.color = '';
+                            amtEl.style.backgroundColor = '';
+                            amtEl.title = '';
+                        }
                     } else {
                         amtEl.style.color = '';
                         amtEl.style.backgroundColor = '';
@@ -1460,16 +1490,24 @@ function autoFill(rowId, prefix, fields) {
             const sumAmtEl = document.getElementById(prefix + '_total_amt');
             
             if (sumAmtEl) {
-                sumAmtEl.innerText = totalAmt > 0 ? totalAmt.toFixed(3) : '0.000';
-                
-                if (Math.abs(totalAmt - expectedTotalAmt) > 0.001) {
-                    sumAmtEl.style.color = '#dc3545';
-                    sumAmtEl.style.fontWeight = '900';
-                    sumAmtEl.title = '警告：排查上方明细，存在【税前+税费≠总额】的行！';
-                } else {
+                // 🌟 新增：只要列表里包含 BPD，总额就强制显示 BPD
+                if (hasBPD) {
+                    sumAmtEl.innerText = 'BPD';
                     sumAmtEl.style.color = '';
                     sumAmtEl.style.fontWeight = 'bold';
                     sumAmtEl.title = '';
+                } else {
+                    sumAmtEl.innerText = totalAmt > 0 ? totalAmt.toFixed(3) : '0.000';
+                    
+                    if (Math.abs(totalAmt - expectedTotalAmt) > 0.001) {
+                        sumAmtEl.style.color = '#dc3545';
+                        sumAmtEl.style.fontWeight = '900';
+                        sumAmtEl.title = '警告：排查上方明细，存在【税前+税费≠总额】的行！';
+                    } else {
+                        sumAmtEl.style.color = '';
+                        sumAmtEl.style.fontWeight = 'bold';
+                        sumAmtEl.title = '';
+                    }
                 }
             }
 
@@ -1479,9 +1517,16 @@ function autoFill(rowId, prefix, fields) {
         } else {
             const sumAmtEl = document.getElementById(prefix + '_total_amt');
             if (sumAmtEl) {
-                sumAmtEl.innerText = totalAmt > 0 ? totalAmt.toFixed(3) : '0.000';
-                sumAmtEl.style.color = '';
-                sumAmtEl.title = '';
+                // 🌟 新增：只要列表里包含 BPD，总额就强制显示 BPD
+                if (hasBPD) {
+                    sumAmtEl.innerText = 'BPD';
+                    sumAmtEl.style.color = '';
+                    sumAmtEl.title = '';
+                } else {
+                    sumAmtEl.innerText = totalAmt > 0 ? totalAmt.toFixed(3) : '0.000';
+                    sumAmtEl.style.color = '';
+                    sumAmtEl.title = '';
+                }
             }
         }
 
