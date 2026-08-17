@@ -2038,7 +2038,7 @@ function initDefaultDemo(todayStr, thisYearSN) {
                     
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(approvalLink).then(() => {
-                            alert('✅ 采购单快照已成功推送到手机审批端！\n\n🔗 专属审批链接已【自动复制】到您的剪贴板：\n' + approvalLink + '\n\n您现在可以直接去微信或 Telegram 粘贴发给领导了。');
+                            alert('✅ 采购单快照已成功推送到手机审批端！\n\n🔗 专属审批链接已【自动复制】到您的剪贴板：\n' + approvalLink + '\n\n您现在可以直接去微信或 Whatsapp 粘贴发给领导了。');
                         }).catch(() => {
                             prompt('✅ 采购单快照已成功推送！\n请手动复制下方专属审批链接发给领导：', approvalLink);
                         });
