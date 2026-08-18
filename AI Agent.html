@@ -2176,20 +2176,20 @@ function loadLanSignatures() {
                         <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
                             <!-- 左侧头衔 -->
                             <div style="text-align: right; white-space: nowrap; flex-shrink: 0;">
-                                <span style="font-size: 14px; font-weight: bold; color: #000;">项目副经理：</span><br>
-                                <span style="font-weight: normal; font-size: 12px; color: #333;">(DPD)</span>
+                                <span style="font-size: 13px; font-weight: bold; color: #000;">项目副经理：</span><br>
+                                <span style="font-weight: normal; font-size: 11px; color: #333;">(DPD)</span>
                             </div>
                             <!-- 右侧签名与硬核审计标签 -->
                             <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0;">
-                                <img src="${sigs['deputy'].url}" style="height: 50px; max-width: 100px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px; margin-bottom: 2px;">
+                                <img src="${sigs['deputy'].url}" style="height: 48px; max-width: 110px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px; margin-bottom: 3px;">
                                 
-                                <!-- 🛡️ 带有 IP 的企业级防伪审计标签 -->
-                                <div style="display: flex; align-items: center; gap: 5px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 3px 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
-                                    <div style="color: #198754; font-size: 16px; line-height: 1;">☑</div>
-                                    <div style="display: flex; flex-direction: column; border-left: 1px solid #dee2e6; padding-left: 5px;">
-                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 9px; font-weight: bold; color: #212529; line-height: 1.1;">${sigs['deputy'].time || ''}</span>
-                                        <span style="font-family: Arial, sans-serif; font-size: 8px; color: #6c757d; line-height: 1.2; white-space: nowrap; max-width: 100px; overflow: hidden; text-overflow: ellipsis;" title="${sigs['deputy'].device || 'Mobile'}">📱 ${sigs['deputy'].device || 'Mobile'}</span>
-                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 8px; color: #dc3545; font-weight: bold; line-height: 1.1;">🌐 IP: ${sigs['deputy'].ip || 'Local Network'}</span>
+                                <!-- 🛡️ 强制左对齐的防伪审计标签 -->
+                                <div style="display: flex; align-items: flex-start; gap: 5px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 4px 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); text-align: left;">
+                                    <div style="color: #198754; font-size: 14px; line-height: 1; margin-top: 1px; flex-shrink: 0;">☑</div>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-start; border-left: 1px solid #dee2e6; padding-left: 6px; min-width: 0;">
+                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 9px; font-weight: bold; color: #212529; line-height: 1.2;">${sigs['deputy'].time || ''}</span>
+                                        <span style="font-family: Arial, sans-serif; font-size: 8px; color: #6c757d; line-height: 1.2; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;" title="${sigs['deputy'].device || 'Mobile'}">📱 ${sigs['deputy'].device || 'Mobile'}</span>
+                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 8px; color: #dc3545; font-weight: bold; line-height: 1.2; white-space: normal; word-break: break-all; max-width: 120px; margin-top: 1px;">🌐 IP: ${sigs['deputy'].ip || 'Local Network'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -2205,20 +2205,20 @@ function loadLanSignatures() {
                          <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
                             <!-- 左侧头衔 -->
                             <div style="text-align: right; white-space: nowrap; flex-shrink: 0;">
-                                <span style="font-size: 14px; font-weight: bold; color: #000;">项目经理：</span><br>
-                                <span style="font-weight: normal; font-size: 12px; color: #333;">(PD)</span>
+                                <span style="font-size: 13px; font-weight: bold; color: #000;">项目经理：</span><br>
+                                <span style="font-weight: normal; font-size: 11px; color: #333;">(PD)</span>
                             </div>
                             <!-- 右侧签名与硬核审计标签 -->
                             <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0;">
-                                <img src="${sigs['manager'].url}" style="height: 50px; max-width: 100px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px; margin-bottom: 2px;">
+                                <img src="${sigs['manager'].url}" style="height: 48px; max-width: 110px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px; margin-bottom: 3px;">
                                 
-                                <!-- 🛡️ 带有 IP 的企业级防伪审计标签 -->
-                                <div style="display: flex; align-items: center; gap: 5px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 3px 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
-                                    <div style="color: #198754; font-size: 16px; line-height: 1;">☑</div>
-                                    <div style="display: flex; flex-direction: column; border-left: 1px solid #dee2e6; padding-left: 5px;">
-                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 9px; font-weight: bold; color: #212529; line-height: 1.1;">${sigs['manager'].time || ''}</span>
-                                        <span style="font-family: Arial, sans-serif; font-size: 8px; color: #6c757d; line-height: 1.2; white-space: nowrap; max-width: 100px; overflow: hidden; text-overflow: ellipsis;" title="${sigs['manager'].device || 'Mobile'}">📱 ${sigs['manager'].device || 'Mobile'}</span>
-                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 8px; color: #dc3545; font-weight: bold; line-height: 1.1;">🌐 IP: ${sigs['manager'].ip || 'Local Network'}</span>
+                                <!-- 🛡️ 强制左对齐的防伪审计标签 -->
+                                <div style="display: flex; align-items: flex-start; gap: 5px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 4px 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); text-align: left;">
+                                    <div style="color: #198754; font-size: 14px; line-height: 1; margin-top: 1px; flex-shrink: 0;">☑</div>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-start; border-left: 1px solid #dee2e6; padding-left: 6px; min-width: 0;">
+                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 9px; font-weight: bold; color: #212529; line-height: 1.2;">${sigs['manager'].time || ''}</span>
+                                        <span style="font-family: Arial, sans-serif; font-size: 8px; color: #6c757d; line-height: 1.2; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis;" title="${sigs['manager'].device || 'Mobile'}">📱 ${sigs['manager'].device || 'Mobile'}</span>
+                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 8px; color: #dc3545; font-weight: bold; line-height: 1.2; white-space: normal; word-break: break-all; max-width: 120px; margin-top: 1px;">🌐 IP: ${sigs['manager'].ip || 'Local Network'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -2233,6 +2233,7 @@ function loadLanSignatures() {
         }
     }).catch(err => alert('❌ 获取签名失败！错误详情：' + err.message));
 }
+
 </script>
 
 <script id="ai-external-module">
