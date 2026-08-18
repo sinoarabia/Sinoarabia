@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import uuid
+from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -85,9 +86,16 @@ def sign():
     req = request.get_json() or {}
     role = req.get('role')
     sig_url = req.get('signature')
-    sign_time = req.get('time', 'Unknown Time')
     sign_device = req.get('device', 'Unknown Device')
     doc_id = req.get('id')
+    
+    # 🌟 1. 抓取真实 IP 地址 (兼容 Nginx 反向代理)
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip and ',' in client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+        
+    # 🌟 2. 强制使用服务器绝对时间 (防前端篡改)
+    server_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = load_data()
     if not data.get("current_form"):
@@ -99,10 +107,12 @@ def sign():
     if "signatures" not in data["current_form"]:
         data["current_form"]["signatures"] = {"deputy": None, "manager": None}
     
+    # 将 IP 和不可篡改的时间写入数据
     data["current_form"]["signatures"][role] = {
         "url": sig_url,
-        "time": sign_time,
-        "device": sign_device
+        "time": server_time, # 废弃前端传来的时间，使用服务器绝对时间
+        "device": sign_device,
+        "ip": client_ip      # 新增 IP 记录
     }
     
     save_data(data)
