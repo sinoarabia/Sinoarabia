@@ -2169,40 +2169,55 @@ function loadLanSignatures() {
             const sigNodes = activeTab.querySelectorAll('.sig-item');
             
             sigNodes.forEach(node => {
-                // 项目副经理签字渲染（紧凑自适应排版）
+                // 🌟 项目副经理签字渲染 (DPD)
                 if (node.innerText.includes('副经理')) {
                     if (sigs['deputy'] && sigs['deputy'].url) {
                         node.innerHTML = `
-                        <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; width:100%; box-sizing:border-box;">
-                            <div style="text-align:right; white-space:nowrap; flex-shrink:0;">
-                                <span style="font-size:13px; font-weight:bold; color:#000;">项目副经理：</span><br>
-                                <span style="font-weight:normal; font-size:11px; color:#333;">(Deputy PM)</span>
+                        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
+                            <!-- 左侧头衔 -->
+                            <div style="text-align: right; white-space: nowrap; flex-shrink: 0;">
+                                <span style="font-size: 14px; font-weight: bold; color: #000;">项目副经理：</span><br>
+                                <span style="font-weight: normal; font-size: 12px; color: #333;">(DPD)</span>
                             </div>
-                            <div style="display:flex; flex-direction:column; align-items:flex-start; min-width:0;">
-                                <img src="${sigs['deputy'].url}" style="height:46px; max-width:105px; mix-blend-mode:multiply; object-fit:contain; margin-left:-3px;">
-                                <div style="margin-top:1px; font-size:9.5px; color:#444; font-weight:normal; text-align:left; font-family:'Segoe UI', Arial, sans-serif; line-height:1.2; white-space:nowrap;">
-                                    <span style="color:#004080; font-weight:bold;">✔</span> ${sigs['deputy'].time || ''}<br>
-                                    <span style="color:#004080; font-weight:bold;">📱</span> ${sigs['deputy'].device || 'Mobile'}
+                            <!-- 右侧签名与认证标签 -->
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0;">
+                                <img src="${sigs['deputy'].url}" style="height: 50px; max-width: 100px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px; margin-bottom: 4px;">
+                                
+                                <!-- 🛡️ 极简高级防伪标签 -->
+                                <div style="display: flex; align-items: center; gap: 5px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 3px 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                                    <div style="background: #28a745; color: #fff; font-size: 9px; font-weight: bold; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">✓</div>
+                                    <div style="display: flex; flex-direction: column; border-left: 1px solid #dee2e6; padding-left: 5px;">
+                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 9.5px; font-weight: bold; color: #343a40; line-height: 1.1;">${sigs['deputy'].time || ''}</span>
+                                        <span style="font-family: Arial, sans-serif; font-size: 8px; color: #6c757d; line-height: 1.1; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;" title="${sigs['deputy'].device || 'Mobile'}">📱 ${sigs['deputy'].device || 'Mobile'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>`;
                         foundAny = true;
                     }
                 }
-                // 项目经理签字渲染
+                
+                // 🌟 项目经理签字渲染 (PD)
                 if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
                      if (sigs['manager'] && sigs['manager'].url) {
                          node.innerHTML = `
-                         <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; width:100%; box-sizing:border-box;">
-                            <div style="text-align:right; white-space:nowrap; flex-shrink:0;">
-                                <span style="font-size:13px; font-weight:bold; color:#000;">项目经理：</span><br>
-                                <span style="font-weight:normal; font-size:11px; color:#333;">(Project Manager)</span>
+                         <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
+                            <!-- 左侧头衔 -->
+                            <div style="text-align: right; white-space: nowrap; flex-shrink: 0;">
+                                <span style="font-size: 14px; font-weight: bold; color: #000;">项目经理：</span><br>
+                                <span style="font-weight: normal; font-size: 12px; color: #333;">(PD)</span>
                             </div>
-                            <div style="display:flex; flex-direction:column; align-items:flex-start; min-width:0;">
-                                <img src="${sigs['manager'].url}" style="height:46px; max-width:105px; mix-blend-mode:multiply; object-fit:contain; margin-left:-3px;">
-                                <div style="margin-top:1px; font-size:9.5px; color:#444; font-weight:normal; text-align:left; font-family:'Segoe UI', Arial, sans-serif; line-height:1.2; white-space:nowrap;">
-                                    <span style="color:#004080; font-weight:bold;">✔</span> ${sigs['manager'].time || ''}<br>
-                                    <span style="color:#004080; font-weight:bold;">📱</span> ${sigs['manager'].device || 'Mobile'}
+                            <!-- 右侧签名与认证标签 -->
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0;">
+                                <img src="${sigs['manager'].url}" style="height: 50px; max-width: 100px; mix-blend-mode: multiply; object-fit: contain; margin-left: -5px; margin-bottom: 4px;">
+                                
+                                <!-- 🛡️ 极简高级防伪标签 -->
+                                <div style="display: flex; align-items: center; gap: 5px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 3px 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                                    <div style="background: #28a745; color: #fff; font-size: 9px; font-weight: bold; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">✓</div>
+                                    <div style="display: flex; flex-direction: column; border-left: 1px solid #dee2e6; padding-left: 5px;">
+                                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 9.5px; font-weight: bold; color: #343a40; line-height: 1.1;">${sigs['manager'].time || ''}</span>
+                                        <span style="font-family: Arial, sans-serif; font-size: 8px; color: #6c757d; line-height: 1.1; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;" title="${sigs['manager'].device || 'Mobile'}">📱 ${sigs['manager'].device || 'Mobile'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>`;
