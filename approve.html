@@ -147,6 +147,124 @@
 
     <script>
         let dpdSigned = false, pdSigned = false;
+// 🌟 高精度设备识别引擎（支持 iPhone 16 PM / 一加 / 华为 / 小米 / 三星 / Pixel 等）🌟
+let cachedDeviceName = null;
+
+async function detectExactDevice() {
+    if (cachedDeviceName) return cachedDeviceName;
+
+    const ua = navigator.userAgent;
+    const w = Math.min(window.screen.width, window.screen.height);
+    const h = Math.max(window.screen.width, window.screen.height);
+    const dpr = window.devicePixelRatio || 1;
+
+    // 1. 尝试使用现代浏览器的 Client Hints
+    if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+        try {
+            const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platformVersion']);
+            if (hints.model) {
+                let m = hints.model.trim();
+                let friendlyName = translateAndroidModel(m);
+                if (friendlyName) {
+                    cachedDeviceName = friendlyName;
+                    return friendlyName;
+                }
+                cachedDeviceName = m;
+                return m;
+            }
+        } catch (e) {}
+    }
+
+    // 2. iOS (iPhone / iPad) 精准分辨率 + 特征库比对
+    if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        if (/iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+            cachedDeviceName = "Apple iPad";
+            return cachedDeviceName;
+        }
+
+        // iPhone 具体机型精准矩阵
+        if (w === 440 && h === 956) cachedDeviceName = "iPhone 16 Pro Max";
+        else if (w === 402 && h === 874) cachedDeviceName = "iPhone 16 Pro";
+        else if (w === 430 && h === 932) cachedDeviceName = "iPhone 16 Plus / 15 PM";
+        else if (w === 393 && h === 852) cachedDeviceName = "iPhone 16 / 15 Pro / 15";
+        else if (w === 428 && h === 926) cachedDeviceName = "iPhone 14 Plus / 13 PM";
+        else if (w === 390 && h === 844) cachedDeviceName = "iPhone 14 / 13 / 13 Pro / 12";
+        else if (w === 375 && h === 812) cachedDeviceName = "iPhone 13 mini / 12 mini / X";
+        else if (w === 414 && h === 896 && dpr >= 3) cachedDeviceName = "iPhone 11 Pro Max / XS Max";
+        else if (w === 414 && h === 896 && dpr < 3) cachedDeviceName = "iPhone 11 / XR";
+        else if (w === 375 && h === 667) cachedDeviceName = "iPhone SE / 8";
+        else if (w === 414 && h === 736) cachedDeviceName = "iPhone 8 Plus";
+        else cachedDeviceName = "Apple iPhone";
+
+        return cachedDeviceName;
+    }
+
+    // 3. 安卓 User-Agent 深度正则提取
+    if (/Android/i.test(ua)) {
+        let match = ua.match(/;\s*([^;]+?)\s*Build\//i) || ua.match(/\(([^;]+?);\s*([^;]+?)\s*Build\//i);
+        let rawModel = match ? (match[2] || match[1]) : null;
+
+        if (rawModel) {
+            rawModel = rawModel.replace(/^Android\s+[\d\.]+;\s*/i, '').trim();
+            let friendly = translateAndroidModel(rawModel);
+            if (friendly) {
+                cachedDeviceName = friendly;
+                return friendly;
+            }
+            cachedDeviceName = rawModel;
+            return rawModel;
+        }
+
+        if (/Pixel\s*[\d\w\s]+/i.test(ua)) return ua.match(/Pixel\s*[\d\w\s]+/i)[0];
+        if (/OnePlus|CPH\d{4}/i.test(ua)) return "OnePlus";
+        if (/SAMSUNG|SM-[A-Z\d]+/i.test(ua)) return "Samsung Galaxy";
+        if (/HUAWEI|HONOR/i.test(ua)) return "Huawei/Honor";
+        if (/Xiaomi|Redmi/i.test(ua)) return "Xiaomi";
+
+        cachedDeviceName = "Android Device";
+        return cachedDeviceName;
+    }
+
+    if (/Windows/i.test(ua)) return "Windows PC";
+    if (/Macintosh/i.test(ua)) return "Mac";
+    return "Web Browser";
+}
+
+function translateAndroidModel(modelStr) {
+    if (!modelStr) return null;
+    let m = modelStr.toUpperCase();
+    
+    if (m.includes('CPH2449') || m.includes('PHB110') || m.includes('CPH2451')) return "OnePlus 11";
+    if (m.includes('CPH2581') || m.includes('PJD110')) return "OnePlus 12";
+    if (m.includes('NE2210') || m.includes('NE2215')) return "OnePlus 10 Pro";
+    if (m.includes('ONEPLUS')) return modelStr;
+
+    if (m.includes('PIXEL 9 PRO XL')) return "Pixel 9 Pro XL";
+    if (m.includes('PIXEL 9 PRO')) return "Pixel 9 Pro";
+    if (m.includes('PIXEL 9')) return "Pixel 9";
+    if (m.includes('PIXEL 8 PRO')) return "Pixel 8 Pro";
+    if (m.includes('PIXEL 8')) return "Pixel 8";
+    if (m.includes('PIXEL 7 PRO')) return "Pixel 7 Pro";
+    if (m.includes('PIXEL 7')) return "Pixel 7";
+
+    if (m.includes('SM-S928')) return "Galaxy S24 Ultra";
+    if (m.includes('SM-S926')) return "Galaxy S24+";
+    if (m.includes('SM-S921')) return "Galaxy S24";
+    if (m.includes('SM-S918')) return "Galaxy S23 Ultra";
+    if (m.includes('SM-S908')) return "Galaxy S22 Ultra";
+
+    if (m.includes('23127PN0CC')) return "Xiaomi 14";
+    if (m.includes('24030PN60G') || m.includes('24031PN0DC')) return "Xiaomi 14 Ultra";
+    if (m.includes('ALN-AL00') || m.includes('ALN-AL10')) return "Huawei Mate 60 Pro";
+    if (m.includes('HBP-AL00')) return "Huawei Pura 70 Ultra";
+
+    return modelStr;
+}
+
+// 页面加载时预热检测
+document.addEventListener("DOMContentLoaded", function() {
+    detectExactDevice();
+});
         let padDpd = null, padPd = null;
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -263,71 +381,60 @@
             document.getElementById('preview_stamps').innerHTML = html;
         }
 
-        function getDeviceType() {
-            const ua = navigator.userAgent;
-            if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "Tablet";
-            if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-                if (/iPhone/.test(ua)) return "Apple iPhone";
-                if (/iPad/.test(ua)) return "Apple iPad";
-                if (/Android/.test(ua)) return "Android Phone";
-                return "Mobile Device";
-            }
-            if (/Macintosh|Mac OS X/.test(ua)) return "Mac OS";
-            if (/Windows NT/.test(ua)) return "Windows PC";
-            return "Web Browser";
-        }
-
         function getCurrentTimeStr() {
             const now = new Date();
             const pad = (n) => n.toString().padStart(2, '0');
             return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
         }
 
-        function submitSignature(role) {
-            let pad = role === 'dpd' ? padDpd : padPd;
-            let backendRole = role === 'dpd' ? 'deputy' : 'manager';
-            let btnSave = document.getElementById(`btn-submit-${role}`);
+async function submitSignature(role) {
+    let pad = role === 'dpd' ? padDpd : padPd;
+    let backendRole = role === 'dpd' ? 'deputy' : 'manager';
+    let btnSave = document.getElementById(`btn-submit-${role}`);
 
-            if (!pad || pad.isEmpty()) {
-                alert("Please provide your signature first! \n يرجى تقديم توقيعك أولاً!");
-                return;
-            }
+    if (!pad || pad.isEmpty()) {
+        alert("Please provide your signature first! \n يرجى تقديم توقيعك أولاً!");
+        return;
+    }
 
-            const url = pad.toDataURL('image/png');
-            const originalHtml = btnSave.innerHTML; 
-            
-            btnSave.innerHTML = 'Submitting...<br><span>جاري الإرسال...</span>';
-            btnSave.disabled = true;
+    const url = pad.toDataURL('image/png');
+    const originalHtml = btnSave.innerHTML; 
+    
+    btnSave.innerHTML = 'Submitting...<br><span>جاري الإرسال...</span>';
+    btnSave.disabled = true;
 
-            fetch('/api/sign', {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    role: backendRole, 
-                    signature: url,
-                    time: getCurrentTimeStr(),
-                    device: getDeviceType(),
-                    id: docId
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'success') {
-                    alert('🎉 Signature submitted successfully! \n تم إرسال التوقيع بنجاح!');
-                    lockPad(role, url); 
-                    if(role === 'pd') setTimeout(() => { window.location.reload(); }, 1500);
-                } else {
-                    alert('❌ Submit failed: ' + data.error);
-                    btnSave.innerHTML = originalHtml;
-                    btnSave.disabled = false;
-                }
-            })
-            .catch(err => {
-                alert('Network error. \n خطأ في الشبكة.');
-                btnSave.innerHTML = originalHtml;
-                btnSave.disabled = false;
-            });
+    // 🌟 抓取精准设备型号
+    const exactDevice = await detectExactDevice();
+
+    fetch('/api/sign', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            role: backendRole, 
+            signature: url,
+            time: getCurrentTimeStr(),
+            device: exactDevice,
+            id: docId
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'success') {
+            alert('🎉 Signature submitted successfully! \n تم إرسال التوقيع بنجاح!');
+            lockPad(role, url); 
+            if(role === 'pd') setTimeout(() => { window.location.reload(); }, 1500);
+        } else {
+            alert('❌ Submit failed: ' + data.error);
+            btnSave.innerHTML = originalHtml;
+            btnSave.disabled = false;
         }
+    })
+    .catch(err => {
+        alert('Network error. \n خطأ في الشبكة.');
+        btnSave.innerHTML = originalHtml;
+        btnSave.disabled = false;
+    });
+}
 
         // ---------- 高清图片缩放逻辑 ----------
         let scale = 1, lastScale = 1, posX = 0, posY = 0, startX = 0, startY = 0;

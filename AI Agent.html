@@ -121,30 +121,26 @@
 @media print {
     @page { size: A4 landscape; margin: 8mm; }
     body { margin: 0; background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
+    
     .no-print, .resizer, .header-nav, .global-rate-box, .add-row-container, .bottom-ai-config { display: none !important; }
-
+    
     .container { box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; min-height: auto !important; }
-
+    
     .doc-title { margin-bottom: 10px !important; }
-
-    /* 🌟 核心修复1：剥离 input 和 textarea，给所有 input 加上 min-width: 0 !important 
-       这样超长文本就不会在打印时强行撑爆列宽，超出部分会自动隐藏并显示省略号 */
-    .input-cell, .readonly-cell {
-        border: none !important; background: transparent !important; box-shadow: none !important;
+    
+    .input-cell, .readonly-cell { 
+        border: none !important; background: transparent !important; box-shadow: none !important; 
         width: 100% !important; min-width: 0 !important; box-sizing: border-box !important;
-        padding: 0 !important; margin: 0 !important; outline: none !important;
+        padding: 0 !important; margin: 0 !important; outline: none !important; 
         overflow: hidden !important; text-overflow: ellipsis !important; color: #000 !important;
     }
 
-    /* 保持原有的 textarea 和 标题 完全展开，支持多行打印 */
-    .flex-textarea, .title-h2, .title-h3 {
-        border: none !important; background: transparent !important; box-shadow: none !important;
+    .flex-textarea, .title-h2, .title-h3 { 
+        border: none !important; background: transparent !important; box-shadow: none !important; 
         width: 100% !important; min-width: 0 !important; box-sizing: border-box !important;
-        padding: 0 !important; margin: 0 !important; outline: none !important; resize: none !important;
+        padding: 0 !important; margin: 0 !important; outline: none !important; resize: none !important; 
         overflow: visible !important; white-space: pre-wrap !important; color: #000 !important;
     }
-
     .title-h2 { font-size: 20px !important; font-weight: bold !important; margin: 5px 0 !important;}
     .title-h3 { font-size: 14px !important; margin: 0 !important;}
 
@@ -155,18 +151,16 @@
     input::-webkit-calendar-picker-indicator { display: none !important; -webkit-appearance: none; }
     input::-webkit-inner-spin-button { display: none !important; }
 
-    /* 🌟 核心修复2：增加 table-layout: fixed !important 
-       让打印引擎绝对服从表头 <th> 设定的百分比宽度，绝不根据内容长短自动乱调 */
     table { width: 100% !important; border-collapse: collapse; margin-top: 5px; font-size: 13px !important; table-layout: fixed !important; word-wrap: break-word !important; }
-    tr { page-break-inside: avoid; }
+    tr { page-break-inside: avoid; } 
     thead { display: table-header-group; }
     tfoot { display: table-row-group; }
-    
-    /* 修复表头和普通单元格的长单词强制换行规则 */
     th, td { border: 1px solid #000 !important; padding: 3px 2px !important; color: #000 !important; word-wrap: break-word !important; word-break: break-word !important; }
-
-    .signature-area { page-break-inside: avoid; margin-top: 15px !important; }
-    .sig-row { margin-bottom: 15px !important; }
+    
+    /* 🌟 核心加固：签字栏专用打印锁死规则，确保 4 列严格等分、不重叠 🌟 */
+    .signature-area { page-break-inside: avoid; margin-top: 20px !important; width: 100% !important; }
+    .sig-row { display: flex !important; justify-content: space-between !important; width: 100% !important; margin-bottom: 15px !important; gap: 4px !important; }
+    .sig-item { flex: 1 1 24% !important; max-width: 25% !important; min-width: 0 !important; box-sizing: border-box !important; overflow: hidden !important; }
 }
     
         /* 🌟 新增：遮罩层背景样式 🌟 */
@@ -2157,74 +2151,71 @@ function initDefaultDemo(todayStr, thisYearSN) {
         });
     }
 function loadLanSignatures() {
-        if (currentActiveTab !== 'purchase') {
-            alert("⚠️ 系统限定：目前只能刷新【采购申请单】的领导签字！");
-            return;
-        }
-        fetch('/api/pending_list')
-        .then(async res => {
-            if (!res.ok) throw new Error('服务器状态码 ' + res.status);
-            return res.json();
-        })
-        .then(data => {
-            if(data['current_form'] && data['current_form'].signatures) {
-                const sigs = data['current_form'].signatures;
-                let foundAny = false;
-                
-                const activeTab = document.getElementById('purchase');
-                const sigNodes = activeTab.querySelectorAll('.sig-item');
-                
-                sigNodes.forEach(node => {
-                    // 🌟 完美按照批注图修改：采用左右横向 Flex 布局
-                    if (node.innerText.includes('副经理')) {
-                        if (sigs['deputy'] && sigs['deputy'].url) {
-                            node.innerHTML = `
-                            <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; width: 100%;">
-                                <!-- 左侧：头衔 -->
-                                <div style="text-align: right; white-space: nowrap;">
-                                    <span style="font-size: 14px; font-weight: bold; color: #000;">项目副经理：</span><br>
-                                    <span style="font-weight: normal; font-size: 12px; color: #333;">(Deputy Project Manager)</span>
-                                </div>
-                                <!-- 右侧：签名与设备信息，内部左对齐 -->
-                                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-top: -15px;">
-                                    <img src="${sigs['deputy'].url}" style="height: 55px; mix-blend-mode: multiply; margin-left: -5px; z-index: 2;">
-                                    <div style="margin-top: 2px; font-size: 11px; color: #555; font-weight: normal; text-align: left; font-family: 'Arial', sans-serif; line-height: 1.4;">
-                                        <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['deputy'].time || 'Unknown'}<br>
-                                        <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['deputy'].device || 'Unknown'}
-                                    </div>
-                                </div>
-                            </div>`;
-                            foundAny = true;
-                        }
-                    }
-                    if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
-                         if (sigs['manager'] && sigs['manager'].url) {
-                             node.innerHTML = `
-                             <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; width: 100%;">
-                                <!-- 左侧：头衔 -->
-                                <div style="text-align: right; white-space: nowrap;">
-                                    <span style="font-size: 14px; font-weight: bold; color: #000;">项目经理：</span><br>
-                                    <span style="font-weight: normal; font-size: 12px; color: #333;">(Project Manager)</span>
-                                </div>
-                                <!-- 右侧：签名与设备信息，内部左对齐 -->
-                                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-top: -15px;">
-                                    <img src="${sigs['manager'].url}" style="height: 55px; mix-blend-mode: multiply; margin-left: -5px; z-index: 2;">
-                                    <div style="margin-top: 2px; font-size: 11px; color: #555; font-weight: normal; text-align: left; font-family: 'Arial', sans-serif; line-height: 1.4;">
-                                        <span style="color:#004080; font-weight: bold;">✔ Signed:</span> ${sigs['manager'].time || 'Unknown'}<br>
-                                        <span style="color:#004080; font-weight: bold;">📱 Device:</span> ${sigs['manager'].device || 'Unknown'}
-                                    </div>
-                                </div>
-                            </div>`;
-                             foundAny = true;
-                         }
-                    }
-                });
-                
-                if(foundAny) alert('✅ 签名已成功刷新！排版已完美对齐。');
-                else alert('⏳ 还没有收到领导的签字记录呢。');
-            }
-        }).catch(err => alert('❌ 获取签名失败！错误详情：' + err.message));
+    if (currentActiveTab !== 'purchase') {
+        alert("⚠️ 系统限定：目前只能刷新【采购申请单】的领导签字！");
+        return;
     }
+    fetch('/api/pending_list')
+    .then(async res => {
+        if (!res.ok) throw new Error('服务器状态码 ' + res.status);
+        return res.json();
+    })
+    .then(data => {
+        if(data['current_form'] && data['current_form'].signatures) {
+            const sigs = data['current_form'].signatures;
+            let foundAny = false;
+            
+            const activeTab = document.getElementById('purchase');
+            const sigNodes = activeTab.querySelectorAll('.sig-item');
+            
+            sigNodes.forEach(node => {
+                // 项目副经理签字渲染（紧凑自适应排版）
+                if (node.innerText.includes('副经理')) {
+                    if (sigs['deputy'] && sigs['deputy'].url) {
+                        node.innerHTML = `
+                        <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; width:100%; box-sizing:border-box;">
+                            <div style="text-align:right; white-space:nowrap; flex-shrink:0;">
+                                <span style="font-size:13px; font-weight:bold; color:#000;">项目副经理：</span><br>
+                                <span style="font-weight:normal; font-size:11px; color:#333;">(Deputy PM)</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; align-items:flex-start; min-width:0;">
+                                <img src="${sigs['deputy'].url}" style="height:46px; max-width:105px; mix-blend-mode:multiply; object-fit:contain; margin-left:-3px;">
+                                <div style="margin-top:1px; font-size:9.5px; color:#444; font-weight:normal; text-align:left; font-family:'Segoe UI', Arial, sans-serif; line-height:1.2; white-space:nowrap;">
+                                    <span style="color:#004080; font-weight:bold;">✔</span> ${sigs['deputy'].time || ''}<br>
+                                    <span style="color:#004080; font-weight:bold;">📱</span> ${sigs['deputy'].device || 'Mobile'}
+                                </div>
+                            </div>
+                        </div>`;
+                        foundAny = true;
+                    }
+                }
+                // 项目经理签字渲染
+                if (node.innerText.includes('项目经理：') && !node.innerText.includes('副')) {
+                     if (sigs['manager'] && sigs['manager'].url) {
+                         node.innerHTML = `
+                         <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; width:100%; box-sizing:border-box;">
+                            <div style="text-align:right; white-space:nowrap; flex-shrink:0;">
+                                <span style="font-size:13px; font-weight:bold; color:#000;">项目经理：</span><br>
+                                <span style="font-weight:normal; font-size:11px; color:#333;">(Project Manager)</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; align-items:flex-start; min-width:0;">
+                                <img src="${sigs['manager'].url}" style="height:46px; max-width:105px; mix-blend-mode:multiply; object-fit:contain; margin-left:-3px;">
+                                <div style="margin-top:1px; font-size:9.5px; color:#444; font-weight:normal; text-align:left; font-family:'Segoe UI', Arial, sans-serif; line-height:1.2; white-space:nowrap;">
+                                    <span style="color:#004080; font-weight:bold;">✔</span> ${sigs['manager'].time || ''}<br>
+                                    <span style="color:#004080; font-weight:bold;">📱</span> ${sigs['manager'].device || 'Mobile'}
+                                </div>
+                            </div>
+                        </div>`;
+                         foundAny = true;
+                     }
+                }
+            });
+            
+            if(foundAny) alert('✅ 签名已成功刷新！排版已完美对齐。');
+            else alert('⏳ 还没有收到领导的签字记录呢。');
+        }
+    }).catch(err => alert('❌ 获取签名失败！错误详情：' + err.message));
+}
 </script>
 
 <script id="ai-external-module">
